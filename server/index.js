@@ -50,14 +50,15 @@ async function initDatabase() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         description TEXT,
-        purchase_quantity DECIMAL(10, 2) NOT NULL,
-        purchase_unit VARCHAR(50) NOT NULL,
         vendor1_name VARCHAR(255),
         vendor1_price DECIMAL(10, 2),
+        vendor1_package_size VARCHAR(10) DEFAULT 'g',
         vendor2_name VARCHAR(255),
         vendor2_price DECIMAL(10, 2),
+        vendor2_package_size VARCHAR(10) DEFAULT 'g',
         vendor3_name VARCHAR(255),
         vendor3_price DECIMAL(10, 2),
+        vendor3_package_size VARCHAR(10) DEFAULT 'g',
         default_vendor_index INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -104,9 +105,9 @@ app.get('/', (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM products ORDER BY created_at DESC');
-    res.json(rows);
+    res.json({ success: true, data: rows });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -129,31 +130,36 @@ app.post('/api/products', async (req, res) => {
     const {
       name,
       description,
-      purchase_quantity,
-      purchase_unit,
       vendor1_name,
       vendor1_price,
+      vendor1_package_size,
       vendor2_name,
       vendor2_price,
+      vendor2_package_size,
       vendor3_name,
       vendor3_price,
+      vendor3_package_size,
       default_vendor_index
     } = req.body;
 
     const [result] = await pool.query(
       `INSERT INTO products (
-        name, description, purchase_quantity, purchase_unit,
-        vendor1_name, vendor1_price, vendor2_name, vendor2_price,
-        vendor3_name, vendor3_price, default_vendor_index
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        name, description,
+        vendor1_name, vendor1_price, vendor1_package_size,
+        vendor2_name, vendor2_price, vendor2_package_size,
+        vendor3_name, vendor3_price, vendor3_package_size,
+        default_vendor_index
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        name, description, purchase_quantity, purchase_unit,
-        vendor1_name, vendor1_price, vendor2_name, vendor2_price,
-        vendor3_name, vendor3_price, default_vendor_index || 0
+        name, description,
+        vendor1_name, vendor1_price, vendor1_package_size || 'g',
+        vendor2_name, vendor2_price, vendor2_package_size || 'g',
+        vendor3_name, vendor3_price, vendor3_package_size || 'g',
+        default_vendor_index || 0
       ]
     );
 
-    res.status(201).json({ id: result.insertId, message: 'Product created successfully' });
+    res.status(201).json({ success: true, id: result.insertId, message: 'Product created successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -165,32 +171,37 @@ app.put('/api/products/:id', async (req, res) => {
     const {
       name,
       description,
-      purchase_quantity,
-      purchase_unit,
       vendor1_name,
       vendor1_price,
+      vendor1_package_size,
       vendor2_name,
       vendor2_price,
+      vendor2_package_size,
       vendor3_name,
       vendor3_price,
+      vendor3_package_size,
       default_vendor_index
     } = req.body;
 
     await pool.query(
       `UPDATE products SET
-        name = ?, description = ?, purchase_quantity = ?, purchase_unit = ?,
-        vendor1_name = ?, vendor1_price = ?, vendor2_name = ?, vendor2_price = ?,
-        vendor3_name = ?, vendor3_price = ?, default_vendor_index = ?
+        name = ?, description = ?,
+        vendor1_name = ?, vendor1_price = ?, vendor1_package_size = ?,
+        vendor2_name = ?, vendor2_price = ?, vendor2_package_size = ?,
+        vendor3_name = ?, vendor3_price = ?, vendor3_package_size = ?,
+        default_vendor_index = ?
       WHERE id = ?`,
       [
-        name, description, purchase_quantity, purchase_unit,
-        vendor1_name, vendor1_price, vendor2_name, vendor2_price,
-        vendor3_name, vendor3_price, default_vendor_index,
+        name, description,
+        vendor1_name, vendor1_price, vendor1_package_size || 'g',
+        vendor2_name, vendor2_price, vendor2_package_size || 'g',
+        vendor3_name, vendor3_price, vendor3_package_size || 'g',
+        default_vendor_index,
         req.params.id
       ]
     );
 
-    res.json({ message: 'Product updated successfully' });
+    res.json({ success: true, message: 'Product updated successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
