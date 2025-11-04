@@ -86,171 +86,228 @@ async function initDatabase() {
       )
     `);
 
-    console.log('✅ Database initialized successfully');
+    console.log('✓ Database initialized successfully');
   } catch (error) {
-    console.error('❌ Database initialization error:', error.message);
+    console.error('Database initialization error:', error.message);
     process.exit(1);
   }
 }
 
 // API Routes
 
-// Products
+// Health check
+app.get('/', (req, res) => {
+  res.json({ message: 'Recipe Costing API is running' });
+});
+
+// Get all products
 app.get('/api/products', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM products ORDER BY created_at DESC');
-    res.json({ success: true, data: rows });
+    res.json(rows);
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
+// Get single product
+app.get('/api/products/:id', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    res.json(rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create product
 app.post('/api/products', async (req, res) => {
   try {
-    const product = req.body;
+    const {
+      name,
+      description,
+      purchase_quantity,
+      purchase_unit,
+      vendor1_name,
+      vendor1_price,
+      vendor2_name,
+      vendor2_price,
+      vendor3_name,
+      vendor3_price,
+      default_vendor_index
+    } = req.body;
+
     const [result] = await pool.query(
-      `INSERT INTO products (name, description, purchase_quantity, purchase_unit, 
-       vendor1_name, vendor1_price, vendor2_name, vendor2_price, 
-       vendor3_name, vendor3_price, default_vendor_index) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products (
+        name, description, purchase_quantity, purchase_unit,
+        vendor1_name, vendor1_price, vendor2_name, vendor2_price,
+        vendor3_name, vendor3_price, default_vendor_index
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        product.name, product.description, product.purchase_quantity, product.purchase_unit,
-        product.vendor1_name, product.vendor1_price, product.vendor2_name, product.vendor2_price,
-        product.vendor3_name, product.vendor3_price, product.default_vendor_index
+        name, description, purchase_quantity, purchase_unit,
+        vendor1_name, vendor1_price, vendor2_name, vendor2_price,
+        vendor3_name, vendor3_price, default_vendor_index || 0
       ]
     );
-    res.json({ success: true, id: result.insertId });
+
+    res.status(201).json({ id: result.insertId, message: 'Product created successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
+// Update product
 app.put('/api/products/:id', async (req, res) => {
   try {
-    const product = req.body;
+    const {
+      name,
+      description,
+      purchase_quantity,
+      purchase_unit,
+      vendor1_name,
+      vendor1_price,
+      vendor2_name,
+      vendor2_price,
+      vendor3_name,
+      vendor3_price,
+      default_vendor_index
+    } = req.body;
+
     await pool.query(
-      `UPDATE products SET name = ?, description = ?, purchase_quantity = ?, purchase_unit = ?,
-       vendor1_name = ?, vendor1_price = ?, vendor2_name = ?, vendor2_price = ?,
-       vendor3_name = ?, vendor3_price = ?, default_vendor_index = ?
-       WHERE id = ?`,
+      `UPDATE products SET
+        name = ?, description = ?, purchase_quantity = ?, purchase_unit = ?,
+        vendor1_name = ?, vendor1_price = ?, vendor2_name = ?, vendor2_price = ?,
+        vendor3_name = ?, vendor3_price = ?, default_vendor_index = ?
+      WHERE id = ?`,
       [
-        product.name, product.description, product.purchase_quantity, product.purchase_unit,
-        product.vendor1_name, product.vendor1_price, product.vendor2_name, product.vendor2_price,
-        product.vendor3_name, product.vendor3_price, product.default_vendor_index, req.params.id
+        name, description, purchase_quantity, purchase_unit,
+        vendor1_name, vendor1_price, vendor2_name, vendor2_price,
+        vendor3_name, vendor3_price, default_vendor_index,
+        req.params.id
       ]
     );
-    res.json({ success: true });
+
+    res.json({ message: 'Product updated successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
+// Delete product
 app.delete('/api/products/:id', async (req, res) => {
   try {
     await pool.query('DELETE FROM products WHERE id = ?', [req.params.id]);
-    res.json({ success: true });
+    res.json({ message: 'Product deleted successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Recipes
+// Get all recipes
 app.get('/api/recipes', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM recipes ORDER BY created_at DESC');
-    res.json({ success: true, data: rows });
+    res.json(rows);
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
+// Get single recipe with ingredients
 app.get('/api/recipes/:id', async (req, res) => {
   try {
-    const [recipe] = await pool.query('SELECT * FROM recipes WHERE id = ?', [req.params.id]);
+    const [recipes] = await pool.query('SELECT * FROM recipes WHERE id = ?', [req.params.id]);
+    if (recipes.length === 0) {
+      return res.status(404).json({ error: 'Recipe not found' });
+    }
+
     const [ingredients] = await pool.query(
-      `SELECT ri.*, p.name as product_name, p.vendor1_price, p.vendor2_price, p.vendor3_price, 
-       p.default_vendor_index, p.purchase_quantity, p.purchase_unit
+      `SELECT ri.*, p.name as product_name
        FROM recipe_ingredients ri
        JOIN products p ON ri.product_id = p.id
        WHERE ri.recipe_id = ?`,
       [req.params.id]
     );
-    res.json({ success: true, data: { recipe: recipe[0], ingredients } });
+
+    res.json({ ...recipes[0], ingredients });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
+// Create recipe
 app.post('/api/recipes', async (req, res) => {
   try {
-    const recipe = req.body;
+    const { name, description, ingredients } = req.body;
+
     const [result] = await pool.query(
       'INSERT INTO recipes (name, description) VALUES (?, ?)',
-      [recipe.name, recipe.description]
+      [name, description]
     );
-    
+
     const recipeId = result.insertId;
-    
-    // Add ingredients
-    if (recipe.ingredients && recipe.ingredients.length > 0) {
-      for (const ingredient of recipe.ingredients) {
+
+    // Insert ingredients
+    if (ingredients && ingredients.length > 0) {
+      for (const ingredient of ingredients) {
         await pool.query(
           'INSERT INTO recipe_ingredients (recipe_id, product_id, quantity, unit) VALUES (?, ?, ?, ?)',
           [recipeId, ingredient.product_id, ingredient.quantity, ingredient.unit]
         );
       }
     }
-    
-    res.json({ success: true, id: recipeId });
+
+    res.status(201).json({ id: recipeId, message: 'Recipe created successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
+// Update recipe
 app.put('/api/recipes/:id', async (req, res) => {
   try {
-    const recipe = req.body;
+    const { name, description, ingredients } = req.body;
+
     await pool.query(
       'UPDATE recipes SET name = ?, description = ? WHERE id = ?',
-      [recipe.name, recipe.description, req.params.id]
+      [name, description, req.params.id]
     );
-    
+
     // Delete existing ingredients
     await pool.query('DELETE FROM recipe_ingredients WHERE recipe_id = ?', [req.params.id]);
-    
-    // Add new ingredients
-    if (recipe.ingredients && recipe.ingredients.length > 0) {
-      for (const ingredient of recipe.ingredients) {
+
+    // Insert new ingredients
+    if (ingredients && ingredients.length > 0) {
+      for (const ingredient of ingredients) {
         await pool.query(
           'INSERT INTO recipe_ingredients (recipe_id, product_id, quantity, unit) VALUES (?, ?, ?, ?)',
           [req.params.id, ingredient.product_id, ingredient.quantity, ingredient.unit]
         );
       }
     }
-    
-    res.json({ success: true });
+
+    res.json({ message: 'Recipe updated successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
+// Delete recipe
 app.delete('/api/recipes/:id', async (req, res) => {
   try {
     await pool.query('DELETE FROM recipes WHERE id = ?', [req.params.id]);
-    res.json({ success: true });
+    res.json({ message: 'Recipe deleted successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: error.message });
   }
-});
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
 });
 
 // Start server
 initDatabase().then(() => {
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 });
