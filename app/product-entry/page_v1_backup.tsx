@@ -212,7 +212,7 @@ export default function ProductEntry() {
                 Product Information
               </Typography>
               <Grid container spacing={3}>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     fullWidth
                     label="Product Name"
@@ -223,7 +223,7 @@ export default function ProductEntry() {
                     variant="outlined"
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     fullWidth
                     label="Description"
@@ -285,7 +285,7 @@ export default function ProductEntry() {
                     </Box>
 
                     <Grid container spacing={2}>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           fullWidth
                           label="Vendor Name"
@@ -295,7 +295,7 @@ export default function ProductEntry() {
                           variant="outlined"
                         />
                       </Grid>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           fullWidth
                           label="Price"
@@ -310,7 +310,7 @@ export default function ProductEntry() {
                           inputProps={{ step: '0.01', min: '0' }}
                         />
                       </Grid>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           fullWidth
                           label="Weight/Quantity"
@@ -322,7 +322,7 @@ export default function ProductEntry() {
                           inputProps={{ step: '0.01', min: '0' }}
                         />
                       </Grid>
-                      <Grid item xs={12} md={6}>
+                      <Grid size={{ xs: 12, md: 6 }}>
                         <FormControl fullWidth variant="outlined">
                           <InputLabel>Package Size</InputLabel>
                           <Select
@@ -370,11 +370,11 @@ export default function ProductEntry() {
                   </Typography>
                   <Divider sx={{ my: 2 }} />
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Typography variant="body2" color="text.secondary">Product Name</Typography>
                       <Typography variant="body1" fontWeight="medium">{formData.name}</Typography>
                     </Grid>
-                    <Grid item xs={12} sm={8}>
+                    <Grid size={{ xs: 12, sm: 8 }}>
                       <Typography variant="body2" color="text.secondary">Description</Typography>
                       <Typography variant="body1">{formData.description}</Typography>
                     </Grid>
@@ -400,19 +400,19 @@ export default function ProductEntry() {
                           )}
                         </Box>
                         <Grid container spacing={2}>
-                          <Grid item xs={6} sm={3}>
+                          <Grid size={{ xs: 6, sm: 3 }}>
                             <Typography variant="body2" color="text.secondary">Name</Typography>
                             <Typography variant="body1">{vendor.name}</Typography>
                           </Grid>
-                          <Grid item xs={6} sm={3}>
+                          <Grid size={{ xs: 6, sm: 3 }}>
                             <Typography variant="body2" color="text.secondary">Price</Typography>
                             <Typography variant="body1">${vendor.price}</Typography>
                           </Grid>
-                          <Grid item xs={6} sm={3}>
+                          <Grid size={{ xs: 6, sm: 3 }}>
                             <Typography variant="body2" color="text.secondary">Weight</Typography>
                             <Typography variant="body1">{vendor.weight}</Typography>
                           </Grid>
-                          <Grid item xs={6} sm={3}>
+                          <Grid size={{ xs: 6, sm: 3 }}>
                             <Typography variant="body2" color="text.secondary">Package Size</Typography>
                             <Typography variant="body1">
                               {packageSizeOptions.find(opt => opt.value === vendor.package_size)?.label}
