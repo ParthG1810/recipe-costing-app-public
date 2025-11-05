@@ -559,7 +559,7 @@ export default function RecipeCreationContent() {
         {/* Navigation Buttons - Above header */}
         <Box sx={{ 
           position: 'fixed', 
-          top: '190px',
+          top: '185px',
           left: '246px',
           right: '24px',
           zIndex: 1000, 
