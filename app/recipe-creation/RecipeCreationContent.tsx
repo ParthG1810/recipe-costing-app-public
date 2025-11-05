@@ -421,7 +421,6 @@ export default function RecipeCreationContent() {
                         <TableCell sx={{ fontWeight: 600 }}>Product</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>Quantity</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>Unit</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Vendor</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>Cost</TableCell>
                         <TableCell sx={{ fontWeight: 600, width: 60 }}></TableCell>
                       </TableRow>
@@ -432,7 +431,6 @@ export default function RecipeCreationContent() {
                           <TableCell>{ingredient.product_name}</TableCell>
                           <TableCell>{ingredient.quantity}</TableCell>
                           <TableCell>{ingredient.unit}</TableCell>
-                          <TableCell>{ingredient.vendor_name || '-'}</TableCell>
                           <TableCell>${ingredient.cost.toFixed(2)}</TableCell>
                           <TableCell>
                             <IconButton
