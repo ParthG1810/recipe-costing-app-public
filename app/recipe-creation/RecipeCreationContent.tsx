@@ -558,15 +558,14 @@ export default function RecipeCreationContent() {
       <Box sx={{ p: 3 }}>
         {/* Navigation Buttons - Above header */}
         <Box sx={{ 
-          position: 'fixed', 
-          top: '185px',
-          left: '246px',
-          right: '24px',
-          zIndex: 1000, 
-          display: 'flex', 
-          justifyContent: 'space-between',
-          pb: 2
-        }}>
+                  position: 'fixed', 
+                  top: '12%',
+                  left: '18%',
+                  right: '2%',
+                  zIndex: 1000, 
+                  display: 'flex', 
+                  justifyContent: 'space-between'
+                }}>
           <Button
             disabled={activeStep === 0}
             onClick={handleBack}
