@@ -504,14 +504,14 @@ export default function ProductEntryContent() {
       <Box sx={{ p: 3 }}>
         {/* Navigation Buttons - Above header */}
         <Box sx={{ 
-          position: 'sticky', 
-          top: 0, 
-          zIndex: 10, 
-          backgroundColor: 'white', 
+          position: 'fixed', 
+          top: '190px',
+          left: '246px',
+          right: '24px',
+          zIndex: 1000, 
           display: 'flex', 
-          justifyContent: 'space-between', 
-          mb: 3,
-          py: 2
+          justifyContent: 'space-between',
+          pb: 2
         }}>
           <Button
             disabled={activeStep === 0}
@@ -539,6 +539,9 @@ export default function ProductEntryContent() {
             </Button>
           )}
         </Box>
+
+        {/* Spacer to prevent content overlap */}
+        <Box sx={{ height: '60px' }} />
 
         <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
           {isEditMode ? 'Edit Product' : 'Add New Product'}
