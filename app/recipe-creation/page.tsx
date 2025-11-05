@@ -34,16 +34,27 @@ import {
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import DashboardLayout from '../components/DashboardLayout';
+import {
+  calculatePricePerGram,
+  calculateIngredientCost,
+  getDefaultPrice,
+  getDefaultWeight,
+  getDefaultPackageSize,
+} from '../utils/helpers';
 
 interface Product {
   id: number;
   name: string;
   vendor1_price: number;
+  vendor1_weight: number;
+  vendor1_package_size: string;
   vendor2_price: number;
+  vendor2_weight: number;
+  vendor2_package_size: string;
   vendor3_price: number;
+  vendor3_weight: number;
+  vendor3_package_size: string;
   default_vendor_index: number;
-  purchase_quantity: number;
-  purchase_unit: string;
 }
 
 interface RecipeIngredient {
@@ -225,18 +236,18 @@ export default function RecipeCreation() {
   const calculateRecipeDetailsCost = () => {
     if (!recipeDetails || !recipeDetails.ingredients) return 0;
     return recipeDetails.ingredients.reduce((total: number, ingredient: any) => {
-      const prices = [ingredient.vendor1_price, ingredient.vendor2_price, ingredient.vendor3_price];
-      const defaultPrice = prices[ingredient.default_vendor_index] || 0;
+      // Get default vendor pricing info
+      const defaultPrice = getDefaultPrice(ingredient);
+      const defaultWeight = getDefaultWeight(ingredient);
+      const defaultPackageSize = getDefaultPackageSize(ingredient);
       
-      let adjustedQuantity = ingredient.quantity;
-      if (ingredient.unit === 'kg' && ingredient.purchase_unit === 'grams') {
-        adjustedQuantity = ingredient.quantity * 1000;
-      } else if (ingredient.unit === 'grams' && ingredient.purchase_unit === 'kg') {
-        adjustedQuantity = ingredient.quantity / 1000;
-      }
-
-      const costPerUnit = defaultPrice / ingredient.purchase_quantity;
-      return total + (costPerUnit * adjustedQuantity);
+      // Calculate price per gram for the default vendor
+      const pricePerGram = calculatePricePerGram(defaultPrice, defaultWeight, defaultPackageSize);
+      
+      // Calculate cost for this ingredient
+      const ingredientCost = calculateIngredientCost(ingredient.quantity, ingredient.unit, pricePerGram);
+      
+      return total + ingredientCost;
     }, 0);
   };
 

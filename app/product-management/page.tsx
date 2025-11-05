@@ -42,12 +42,15 @@ interface Product {
   description: string;
   vendor1_name: string;
   vendor1_price: number;
+  vendor1_weight: number;
   vendor1_package_size: string;
   vendor2_name: string;
   vendor2_price: number;
+  vendor2_weight: number;
   vendor2_package_size: string;
   vendor3_name: string;
   vendor3_price: number;
+  vendor3_weight: number;
   vendor3_package_size: string;
   default_vendor_index: number;
 }
@@ -173,6 +176,7 @@ function ProductRow({ product, onUpdate, onDelete }: { product: Product; onUpdat
                     <TableCell sx={{ fontWeight: 'bold' }}>Vendor</TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }}>Vendor Name</TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }}>Price</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Weight</TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }}>Package Size</TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }}>Default</TableCell>
                   </TableRow>
@@ -205,6 +209,20 @@ function ProductRow({ product, onUpdate, onDelete }: { product: Product; onUpdat
                         />
                       ) : (
                         `$${product.vendor1_price?.toFixed(2) || '0.00'}`
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editing ? (
+                        <TextField
+                          size="small"
+                          type="number"
+                          value={editData.vendor1_weight}
+                          onChange={(e) => handleEditChange('vendor1_weight', parseFloat(e.target.value))}
+                          inputProps={{ step: '0.01', min: '0' }}
+                          fullWidth
+                        />
+                      ) : (
+                        product.vendor1_weight || '-'
                       )}
                     </TableCell>
                     <TableCell>
@@ -273,6 +291,20 @@ function ProductRow({ product, onUpdate, onDelete }: { product: Product; onUpdat
                     </TableCell>
                     <TableCell>
                       {editing ? (
+                        <TextField
+                          size="small"
+                          type="number"
+                          value={editData.vendor2_weight}
+                          onChange={(e) => handleEditChange('vendor2_weight', parseFloat(e.target.value))}
+                          inputProps={{ step: '0.01', min: '0' }}
+                          fullWidth
+                        />
+                      ) : (
+                        product.vendor2_weight || '-'
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editing ? (
                         <Select
                           size="small"
                           value={editData.vendor2_package_size}
@@ -333,6 +365,20 @@ function ProductRow({ product, onUpdate, onDelete }: { product: Product; onUpdat
                         />
                       ) : (
                         `$${product.vendor3_price?.toFixed(2) || '0.00'}`
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editing ? (
+                        <TextField
+                          size="small"
+                          type="number"
+                          value={editData.vendor3_weight}
+                          onChange={(e) => handleEditChange('vendor3_weight', parseFloat(e.target.value))}
+                          inputProps={{ step: '0.01', min: '0' }}
+                          fullWidth
+                        />
+                      ) : (
+                        product.vendor3_weight || '-'
                       )}
                     </TableCell>
                     <TableCell>
