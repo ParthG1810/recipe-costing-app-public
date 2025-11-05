@@ -1,5 +1,6 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Box,
   Button,
@@ -38,7 +39,12 @@ interface VendorData {
 }
 
 export default function ProductEntryContent() {
+  const searchParams = useSearchParams();
+  const productId = searchParams.get('id');
+  const isEditMode = !!productId;
+  
   const [activeStep, setActiveStep] = useState(0);
+  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -55,6 +61,49 @@ export default function ProductEntryContent() {
   });
 
   const steps = ['Product Information', 'Vendor Details', 'Review'];
+
+  useEffect(() => {
+    if (isEditMode && productId) {
+      fetchProductData(productId);
+    }
+  }, [isEditMode, productId]);
+
+  const fetchProductData = async (id: string) => {
+    setIsLoadingProduct(true);
+    try {
+      const response = await fetch(`http://localhost:3001/api/products/${id}`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const product = result.data;
+        setFormData({
+          name: product.name || '',
+          description: product.description || '',
+        });
+        
+        // Convert vendors to the format used in the form
+        if (product.vendors && product.vendors.length > 0) {
+          const formattedVendors = product.vendors.map((v: any) => ({
+            vendor_name: v.vendor_name,
+            price: v.price.toString(),
+            weight: v.weight.toString(),
+            package_size: v.package_size,
+            is_default: v.is_default,
+          }));
+          setVendors(formattedVendors);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching product data:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error loading product data',
+        severity: 'error',
+      });
+    } finally {
+      setIsLoadingProduct(false);
+    }
+  };
 
   const handleFormChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -125,8 +174,13 @@ export default function ProductEntryContent() {
         is_default: v.is_default,
       }));
 
-      const response = await fetch('http://localhost:3001/api/products', {
-        method: 'POST',
+      const url = isEditMode 
+        ? `http://localhost:3001/api/products/${productId}`
+        : 'http://localhost:3001/api/products';
+      const method = isEditMode ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
@@ -140,16 +194,24 @@ export default function ProductEntryContent() {
       if (result.success) {
         setSnackbar({
           open: true,
-          message: 'Product added successfully!',
+          message: isEditMode ? 'Product updated successfully!' : 'Product added successfully!',
           severity: 'success',
         });
-        // Reset form
-        setFormData({
-          name: '',
-          description: '',
-        });
-        setVendors([{ vendor_name: '', price: '', weight: '', package_size: 'g', is_default: true }]);
-        setActiveStep(0);
+        
+        if (isEditMode) {
+          // In edit mode, go back to first step after a delay
+          setTimeout(() => {
+            setActiveStep(0);
+          }, 1500);
+        } else {
+          // In create mode, reset form
+          setFormData({
+            name: '',
+            description: '',
+          });
+          setVendors([{ vendor_name: '', price: '', weight: '', package_size: 'g', is_default: true }]);
+          setActiveStep(0);
+        }
       } else {
         throw new Error(result.error);
       }
@@ -397,8 +459,13 @@ export default function ProductEntryContent() {
     <DashboardLayout>
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
-          Add New Product
+          {isEditMode ? 'Edit Product' : 'Add New Product'}
         </Typography>
+        {isLoadingProduct && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Loading product data...
+          </Typography>
+        )}
 
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
           {steps.map((label) => (
@@ -425,7 +492,7 @@ export default function ProductEntryContent() {
                   onClick={handleSubmit}
                   startIcon={<CheckCircleIcon />}
                 >
-                  Create Product
+                  {isEditMode ? 'Update Product' : 'Create Product'}
                 </Button>
               ) : (
                 <Button

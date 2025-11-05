@@ -72,11 +72,6 @@ export default function ProductManagementContent() {
   const [orderBy, setOrderBy] = useState<'id' | 'name'>('id');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
 
-  const [editDialog, setEditDialog] = useState({
-    open: false,
-    product: null as Product | null,
-  });
-
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
     productId: null as number | null,
@@ -127,43 +122,6 @@ export default function ProductManagementContent() {
     }
   };
 
-  const handleEditOpen = (product: Product) => {
-    setEditDialog({ open: true, product: JSON.parse(JSON.stringify(product)) });
-  };
-
-  const handleEditClose = () => {
-    setEditDialog({ open: false, product: null });
-  };
-
-  const handleEditSave = async () => {
-    if (!editDialog.product) return;
-
-    try {
-      const response = await fetch(`http://localhost:3001/api/products/${editDialog.product.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editDialog.product),
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        setSnackbar({
-          open: true,
-          message: 'Product updated successfully',
-          severity: 'success',
-        });
-        fetchProducts();
-        handleEditClose();
-      }
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message: 'Error updating product',
-        severity: 'error',
-      });
-    }
-  };
-
   const handleDeleteOpen = (productId: number) => {
     setDeleteDialog({ open: true, productId });
   };
@@ -197,91 +155,6 @@ export default function ProductManagementContent() {
     }
 
     setDeleteDialog({ open: false, productId: null });
-  };
-
-  const handleEditChange = (field: keyof Product, value: any) => {
-    if (editDialog.product) {
-      setEditDialog({
-        ...editDialog,
-        product: {
-          ...editDialog.product,
-          [field]: value,
-        },
-      });
-    }
-  };
-
-  const handleVendorChange = (index: number, field: keyof Vendor, value: any) => {
-    if (editDialog.product) {
-      const updatedVendors = [...editDialog.product.vendors];
-      updatedVendors[index] = {
-        ...updatedVendors[index],
-        [field]: value,
-      };
-      setEditDialog({
-        ...editDialog,
-        product: {
-          ...editDialog.product,
-          vendors: updatedVendors,
-        },
-      });
-    }
-  };
-
-  const addVendorToEdit = () => {
-    if (editDialog.product) {
-      setEditDialog({
-        ...editDialog,
-        product: {
-          ...editDialog.product,
-          vendors: [
-            ...editDialog.product.vendors,
-            {
-              id: 0,
-              product_id: editDialog.product.id,
-              vendor_name: '',
-              price: 0,
-              weight: 0,
-              package_size: 'g',
-              is_default: false,
-            },
-          ],
-        },
-      });
-    }
-  };
-
-  const removeVendorFromEdit = (index: number) => {
-    if (editDialog.product && editDialog.product.vendors.length > 1) {
-      const updatedVendors = editDialog.product.vendors.filter((_, i) => i !== index);
-      // If removed vendor was default, set first vendor as default
-      if (editDialog.product.vendors[index].is_default && updatedVendors.length > 0) {
-        updatedVendors[0].is_default = true;
-      }
-      setEditDialog({
-        ...editDialog,
-        product: {
-          ...editDialog.product,
-          vendors: updatedVendors,
-        },
-      });
-    }
-  };
-
-  const setDefaultVendorInEdit = (index: number) => {
-    if (editDialog.product) {
-      const updatedVendors = editDialog.product.vendors.map((v, i) => ({
-        ...v,
-        is_default: i === index,
-      }));
-      setEditDialog({
-        ...editDialog,
-        product: {
-          ...editDialog.product,
-          vendors: updatedVendors,
-        },
-      });
-    }
   };
 
   const getDefaultPrice = (product: Product): number => {
@@ -442,7 +315,8 @@ export default function ProductManagementContent() {
                       <Tooltip title="Edit">
                         <IconButton
                           size="small"
-                          onClick={() => handleEditOpen(product)}
+                          component="a"
+                          href={`/product-entry?id=${product.id}`}
                           color="primary"
                         >
                           <EditIcon />
@@ -515,166 +389,6 @@ export default function ProductManagementContent() {
           />
         </TableContainer>
 
-        {/* Edit Dialog */}
-        <Dialog
-          open={editDialog.open}
-          onClose={handleEditClose}
-          maxWidth="md"
-          fullWidth
-          fullScreen
-        >
-          <DialogTitle>
-            Edit Product
-            <IconButton
-              onClick={handleEditClose}
-              sx={{ position: 'absolute', right: 8, top: 8 }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent dividers>
-            {editDialog.product && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {/* Product Information */}
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Product Information
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <TextField
-                        label="Product Name"
-                        fullWidth
-                        value={editDialog.product.name}
-                        onChange={(e) => handleEditChange('name', e.target.value)}
-                      />
-                      <TextField
-                        label="Description"
-                        fullWidth
-                        multiline
-                        rows={2}
-                        value={editDialog.product.description}
-                        onChange={(e) => handleEditChange('description', e.target.value)}
-                      />
-                    </Box>
-                  </CardContent>
-                </Card>
-
-                {/* Vendors */}
-                <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6">
-                      Vendors ({editDialog.product.vendors.length})
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={addVendorToEdit}
-                      size="small"
-                    >
-                      Add Vendor
-                    </Button>
-                  </Box>
-
-                  {editDialog.product.vendors.map((vendor, index) => (
-                    <Card key={index} variant="outlined" sx={{ mb: 2 }}>
-                      <CardContent>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                          <Typography variant="subtitle1" fontWeight={600}>
-                            Vendor {index + 1}
-                            {vendor.is_default && (
-                              <Chip
-                                label="Default"
-                                size="small"
-                                color="success"
-                                sx={{ ml: 1 }}
-                              />
-                            )}
-                          </Typography>
-                          <Box>
-                            {!vendor.is_default && (
-                              <Button
-                                size="small"
-                                onClick={() => setDefaultVendorInEdit(index)}
-                                sx={{ mr: 1 }}
-                              >
-                                Set as Default
-                              </Button>
-                            )}
-                            {editDialog.product.vendors.length > 1 && (
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => removeVendorFromEdit(index)}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            )}
-                          </Box>
-                        </Box>
-
-                        <Grid container spacing={2}>
-                          <Grid item xs={12}>
-                            <TextField
-                              label="Vendor Name"
-                              fullWidth
-                              value={vendor.vendor_name}
-                              onChange={(e) => handleVendorChange(index, 'vendor_name', e.target.value)}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
-                            <TextField
-                              label="Price"
-                              fullWidth
-                              type="number"
-                              value={vendor.price}
-                              onChange={(e) => handleVendorChange(index, 'price', parseFloat(e.target.value))}
-                              inputProps={{ step: '0.01', min: '0' }}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
-                            <TextField
-                              label="Weight"
-                              fullWidth
-                              type="number"
-                              value={vendor.weight}
-                              onChange={(e) => handleVendorChange(index, 'weight', parseFloat(e.target.value))}
-                              inputProps={{ step: '0.01', min: '0' }}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
-                            <FormControl fullWidth>
-                              <InputLabel>Package Size</InputLabel>
-                              <Select
-                                value={vendor.package_size}
-                                onChange={(e) => handleVendorChange(index, 'package_size', e.target.value)}
-                                label="Package Size"
-                              >
-                                <MenuItem value="g">Grams (g)</MenuItem>
-                                <MenuItem value="kg">Kilograms (kg)</MenuItem>
-                                <MenuItem value="lb">Pounds (lb)</MenuItem>
-                                <MenuItem value="oz">Ounces (oz)</MenuItem>
-                                <MenuItem value="ml">Milliliters (ml)</MenuItem>
-                                <MenuItem value="l">Liters (l)</MenuItem>
-                                <MenuItem value="pcs">Pieces (pcs)</MenuItem>
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                        </Grid>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </Box>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleEditClose}>Cancel</Button>
-            <Button onClick={handleEditSave} variant="contained">
-              Save Changes
-            </Button>
-          </DialogActions>
-        </Dialog>
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialog.open} onClose={handleDeleteClose}>
