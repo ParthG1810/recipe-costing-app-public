@@ -336,10 +336,10 @@ export default function RecipeCreationContent() {
         return (
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
                 Add Ingredients
               </Typography>
-              <Grid container spacing={3} sx={{ mt: 2 }}>
+              <Grid container spacing={3} sx={{ mt: 1 }}>
                 <Grid item xs={12} md={5}>
                   <FormControl fullWidth>
                     <InputLabel sx={{ fontSize: '1.05rem' }}>Select Product</InputLabel>
@@ -398,51 +398,53 @@ export default function RecipeCreationContent() {
               </Grid>
 
               {ingredients.length > 0 && (
-                <TableContainer component={Paper} sx={{ mt: 3 }} variant="outlined">
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Product</TableCell>
-                        <TableCell>Quantity</TableCell>
-                        <TableCell>Unit</TableCell>
-                        <TableCell align="right">Cost</TableCell>
-                        <TableCell align="center">Action</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {ingredients.map((ingredient, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{ingredient.product_name}</TableCell>
-                          <TableCell>{ingredient.quantity}</TableCell>
-                          <TableCell>{ingredient.unit}</TableCell>
-                          <TableCell align="right">${ingredient.cost.toFixed(2)}</TableCell>
-                          <TableCell align="center">
-                            <IconButton
-                              color="error"
-                              size="small"
-                              onClick={() => removeIngredient(index)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
+                <Box sx={{ mt: 4 }}>
+                  <TableContainer component={Box} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontSize: '1.05rem', fontWeight: 600 }}>Product</TableCell>
+                          <TableCell sx={{ fontSize: '1.05rem', fontWeight: 600 }}>Quantity</TableCell>
+                          <TableCell sx={{ fontSize: '1.05rem', fontWeight: 600 }}>Unit</TableCell>
+                          <TableCell align="right" sx={{ fontSize: '1.05rem', fontWeight: 600 }}>Cost</TableCell>
+                          <TableCell align="center" sx={{ fontSize: '1.05rem', fontWeight: 600 }}>Action</TableCell>
                         </TableRow>
-                      ))}
-                      <TableRow>
-                        <TableCell colSpan={3}>
-                          <Typography variant="subtitle1" fontWeight={600}>
-                            Total Cost
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="subtitle1" fontWeight={600} color="primary">
-                            ${calculateTotalCost().toFixed(2)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell />
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                      </TableHead>
+                      <TableBody>
+                        {ingredients.map((ingredient, index) => (
+                          <TableRow key={index}>
+                            <TableCell sx={{ fontSize: '1.05rem', py: 2 }}>{ingredient.product_name}</TableCell>
+                            <TableCell sx={{ fontSize: '1.05rem', py: 2 }}>{ingredient.quantity}</TableCell>
+                            <TableCell sx={{ fontSize: '1.05rem', py: 2 }}>{ingredient.unit}</TableCell>
+                            <TableCell align="right" sx={{ fontSize: '1.05rem', py: 2 }}>${ingredient.cost.toFixed(2)}</TableCell>
+                            <TableCell align="center" sx={{ py: 2 }}>
+                              <IconButton
+                                color="error"
+                                size="medium"
+                                onClick={() => removeIngredient(index)}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow sx={{ bgcolor: 'grey.50' }}>
+                          <TableCell colSpan={3} sx={{ py: 2.5 }}>
+                            <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '1.1rem' }}>
+                              Total Cost
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right" sx={{ py: 2.5 }}>
+                            <Typography variant="subtitle1" fontWeight={700} color="primary" sx={{ fontSize: '1.1rem' }}>
+                              ${calculateTotalCost().toFixed(2)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell />
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
               )}
             </CardContent>
           </Card>
