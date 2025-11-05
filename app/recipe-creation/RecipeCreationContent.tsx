@@ -139,6 +139,11 @@ export default function RecipeCreationContent() {
             };
           });
           setIngredients(formattedIngredients);
+          
+          // Auto-select next available product after loading ingredients
+          const usedProductIds = formattedIngredients.map(ing => ing.product_id);
+          const availableProduct = products.find(p => !usedProductIds.includes(p.id));
+          setSelectedProduct(availableProduct ? availableProduct.id : '');
         }
       }
     } catch (error) {
