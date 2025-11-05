@@ -47,7 +47,7 @@ export default function ProductEntry() {
 
   // Only Vendor 1 is required, others are optional
   const [vendors, setVendors] = useState<VendorData[]>([
-    { name: '', price: '', weight: '', package_size: 'kg' },
+    { name: '', price: '', weight: '', package_size: 'g' },
   ]);
 
   const [snackbar, setSnackbar] = useState({
@@ -87,7 +87,7 @@ export default function ProductEntry() {
 
   const addVendor = () => {
     if (vendors.length < 3) {
-      setVendors([...vendors, { name: '', price: '', weight: '', package_size: 'kg' }]);
+      setVendors([...vendors, { name: '', price: '', weight: '', package_size: 'g' }]);
     }
   };
 
@@ -157,7 +157,7 @@ export default function ProductEntry() {
           description: '',
           default_vendor_index: 0,
         });
-        setVendors([{ name: '', price: '', weight: '', package_size: 'kg' }]);
+        setVendors([{ name: '', price: '', weight: '', package_size: 'g' }]);
         setActiveStep(0);
       } else {
         throw new Error(result.error);
