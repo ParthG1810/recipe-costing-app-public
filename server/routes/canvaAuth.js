@@ -143,15 +143,19 @@ router.post('/refresh', async (req, res) => {
  * @access  Public
  */
 router.get('/status', (req, res) => {
-  const isConfigured = !!(config.canva.apiKey && config.canva.apiSecret);
-  const useMCP = !isConfigured;
+  const canvaService = require('../services/canvaService');
+  const mode = canvaService.getMode();
+  
+  const messages = {
+    'MCP': 'Using Canva MCP integration (sandbox mode)',
+    'REST': 'Using Canva REST API (production mode)',
+    'MOCK': 'Using Mock Canva service (local development mode)'
+  };
 
   res.json(successResponse({
-    configured: isConfigured,
-    useMCP: useMCP,
-    message: useMCP 
-      ? 'Using Canva MCP integration (development mode)' 
-      : 'Using Canva REST API (production mode)'
+    mode: mode,
+    message: messages[mode],
+    note: mode === 'MOCK' ? 'Mock mode provides sample templates for testing. Add Canva API keys for real integration.' : null
   }));
 });
 

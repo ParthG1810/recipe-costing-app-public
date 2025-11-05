@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { exec } = require('child_process');
+const { exec, execSync } = require('child_process');
 const util = require('util');
 const config = require('../config');
 
@@ -9,19 +9,59 @@ const CANVA_API_BASE = 'https://api.canva.com/rest/v1';
 
 /**
  * Canva Service
- * Supports both MCP (development) and REST API (production) modes
+ * Supports three modes: MCP (sandbox), REST API (production), and Mock (local development)
  */
 class CanvaService {
   constructor() {
-    this.useMCP = !config.canva.apiKey || !config.canva.apiSecret;
+    // Check if MCP is available
+    this.mcpAvailable = this.checkMCPAvailability();
+    
+    // Determine mode
+    const hasAPIKeys = config.canva.apiKey && config.canva.apiSecret;
+    
+    if (!hasAPIKeys && this.mcpAvailable) {
+      this.mode = 'MCP';
+    } else if (hasAPIKeys) {
+      this.mode = 'REST';
+    } else {
+      this.mode = 'MOCK';
+    }
+    
     this.accessToken = null;
+    console.log(`✓ Canva Service initialized in ${this.mode} mode`);
   }
 
   /**
-   * Check if using MCP or REST API
+   * Check if manus-mcp-cli is available
+   */
+  checkMCPAvailability() {
+    try {
+      execSync('which manus-mcp-cli', { stdio: 'ignore' });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Get current mode
+   */
+  getMode() {
+    return this.mode;
+  }
+
+  /**
+   * Check if using MCP
    */
   isUsingMCP() {
-    return this.useMCP;
+    return this.mode === 'MCP';
+  }
+
+  /**
+   * Check if using Mock mode
+   */
+  isUsingMock() {
+    return this.mode === 'MOCK';
   }
 
   /**
@@ -34,11 +74,13 @@ class CanvaService {
   /**
    * Generate AI design templates
    */
-  async generateDesign(prompt, designType = 'Flyer') {
-    if (this.useMCP) {
+  async generateDesign(prompt, designType = 'flyer') {
+    if (this.mode === 'MCP') {
       return this.generateDesignMCP(prompt, designType);
-    } else {
+    } else if (this.mode === 'REST') {
       return this.generateDesignREST(prompt, designType);
+    } else {
+      return this.generateDesignMock(prompt, designType);
     }
   }
 
@@ -55,14 +97,58 @@ class CanvaService {
       const { stdout } = await execPromise(command);
       const result = JSON.parse(stdout);
       
-      return {
-        candidates: result.candidates || [],
-        jobId: result.job_id
-      };
+      if (result.job_id && result.candidates) {
+        return {
+          jobId: result.job_id,
+          candidates: result.candidates
+        };
+      }
+      
+      throw new Error('Invalid MCP response format');
     } catch (error) {
-      console.error('MCP generate-design error:', error);
       throw new Error(`Failed to generate design via MCP: ${error.message}`);
     }
+  }
+
+  /**
+   * Generate design using Mock (for local development)
+   */
+  async generateDesignMock(prompt, designType) {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Return mock template data
+    const mockTemplates = [
+      {
+        id: 'mock-template-1',
+        title: 'Modern Weekly Menu',
+        thumbnail: 'https://via.placeholder.com/400x600/4A90E2/ffffff?text=Modern+Menu',
+        style: 'modern'
+      },
+      {
+        id: 'mock-template-2',
+        title: 'Traditional Weekly Menu',
+        thumbnail: 'https://via.placeholder.com/400x600/E27D60/ffffff?text=Traditional+Menu',
+        style: 'traditional'
+      },
+      {
+        id: 'mock-template-3',
+        title: 'Colorful Weekly Menu',
+        thumbnail: 'https://via.placeholder.com/400x600/85CDCA/ffffff?text=Colorful+Menu',
+        style: 'colorful'
+      },
+      {
+        id: 'mock-template-4',
+        title: 'Minimalist Weekly Menu',
+        thumbnail: 'https://via.placeholder.com/400x600/C38D9E/ffffff?text=Minimalist+Menu',
+        style: 'minimalist'
+      }
+    ];
+
+    return {
+      jobId: 'mock-job-' + Date.now(),
+      candidates: mockTemplates
+    };
   }
 
   /**
@@ -71,145 +157,117 @@ class CanvaService {
   async generateDesignREST(prompt, designType) {
     try {
       if (!this.accessToken) {
-        throw new Error('Access token required for REST API');
+        throw new Error('Access token required for REST API mode');
       }
 
-      const response = await axios.post(`${CANVA_API_BASE}/designs/generate`, {
-        query: prompt,
-        design_type: designType
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json'
+      const response = await axios.post(
+        `${CANVA_API_BASE}/designs/generate`,
+        {
+          query: prompt,
+          design_type: designType.toLowerCase()
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
 
       return response.data;
     } catch (error) {
-      console.error('REST API generate-design error:', error.response?.data || error.message);
-      throw new Error(`Failed to generate design via REST API: ${error.response?.data?.message || error.message}`);
+      throw new Error(`Failed to generate design via REST API: ${error.message}`);
     }
   }
 
   /**
    * Create design from candidate
    */
-  async createDesignFromCandidate(candidateId, jobId) {
-    if (this.useMCP) {
-      return this.createDesignFromCandidateMCP(candidateId, jobId);
+  async createDesignFromCandidate(jobId, candidateId) {
+    if (this.mode === 'MCP') {
+      return this.createDesignFromCandidateMCP(jobId, candidateId);
+    } else if (this.mode === 'REST') {
+      return this.createDesignFromCandidateREST(jobId, candidateId);
     } else {
-      return this.createDesignFromCandidateREST(candidateId, jobId);
+      return this.createDesignFromCandidateMock(jobId, candidateId);
     }
   }
 
   /**
    * Create design from candidate using MCP
    */
-  async createDesignFromCandidateMCP(candidateId, jobId) {
+  async createDesignFromCandidateMCP(jobId, candidateId) {
     try {
       const command = `manus-mcp-cli tool call create-design-from-candidate --server canva --input '${JSON.stringify({
-        candidate_id: candidateId,
-        job_id: jobId
+        job_id: jobId,
+        candidate_id: candidateId
       })}'`;
 
       const { stdout } = await execPromise(command);
       const result = JSON.parse(stdout);
       
       return {
-        designId: result.design_id,
+        designId: result.id,
         title: result.title,
-        url: result.url
+        url: result.urls?.view_url
       };
     } catch (error) {
-      console.error('MCP create-design-from-candidate error:', error);
       throw new Error(`Failed to create design from candidate via MCP: ${error.message}`);
     }
   }
 
   /**
+   * Create design from candidate using Mock
+   */
+  async createDesignFromCandidateMock(jobId, candidateId) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return {
+      designId: candidateId,
+      title: 'Weekly Menu Design',
+      url: `https://www.canva.com/design/${candidateId}/view`
+    };
+  }
+
+  /**
    * Create design from candidate using REST API
    */
-  async createDesignFromCandidateREST(candidateId, jobId) {
+  async createDesignFromCandidateREST(jobId, candidateId) {
     try {
       if (!this.accessToken) {
-        throw new Error('Access token required for REST API');
+        throw new Error('Access token required for REST API mode');
       }
 
-      const response = await axios.post(`${CANVA_API_BASE}/designs/from-candidate`, {
-        candidate_id: candidateId,
-        job_id: jobId
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json'
+      const response = await axios.post(
+        `${CANVA_API_BASE}/designs/from-candidate`,
+        {
+          job_id: jobId,
+          candidate_id: candidateId
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
 
       return response.data;
     } catch (error) {
-      console.error('REST API create-design-from-candidate error:', error.response?.data || error.message);
-      throw new Error(`Failed to create design from candidate via REST API: ${error.response?.data?.message || error.message}`);
-    }
-  }
-
-  /**
-   * Get design details
-   */
-  async getDesign(designId) {
-    if (this.useMCP) {
-      return this.getDesignMCP(designId);
-    } else {
-      return this.getDesignREST(designId);
-    }
-  }
-
-  /**
-   * Get design using MCP
-   */
-  async getDesignMCP(designId) {
-    try {
-      const command = `manus-mcp-cli tool call get-design --server canva --input '${JSON.stringify({
-        design_id: designId
-      })}'`;
-
-      const { stdout } = await execPromise(command);
-      return JSON.parse(stdout);
-    } catch (error) {
-      console.error('MCP get-design error:', error);
-      throw new Error(`Failed to get design via MCP: ${error.message}`);
-    }
-  }
-
-  /**
-   * Get design using REST API
-   */
-  async getDesignREST(designId) {
-    try {
-      if (!this.accessToken) {
-        throw new Error('Access token required for REST API');
-      }
-
-      const response = await axios.get(`${CANVA_API_BASE}/designs/${designId}`, {
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`
-        }
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error('REST API get-design error:', error.response?.data || error.message);
-      throw new Error(`Failed to get design via REST API: ${error.response?.data?.message || error.message}`);
+      throw new Error(`Failed to create design from candidate via REST API: ${error.message}`);
     }
   }
 
   /**
    * Export design
    */
-  async exportDesign(designId, format = 'png', quality = 'high') {
-    if (this.useMCP) {
+  async exportDesign(designId, format = 'png', quality = 'pro') {
+    if (this.mode === 'MCP') {
       return this.exportDesignMCP(designId, format, quality);
-    } else {
+    } else if (this.mode === 'REST') {
       return this.exportDesignREST(designId, format, quality);
+    } else {
+      return this.exportDesignMock(designId, format, quality);
     }
   }
 
@@ -220,7 +278,7 @@ class CanvaService {
     try {
       const command = `manus-mcp-cli tool call export-design --server canva --input '${JSON.stringify({
         design_id: designId,
-        format: format,
+        format: format.toLowerCase(),
         quality: quality
       })}'`;
 
@@ -228,14 +286,31 @@ class CanvaService {
       const result = JSON.parse(stdout);
       
       return {
-        exportUrl: result.export_url,
+        url: result.url,
         format: format,
         quality: quality
       };
     } catch (error) {
-      console.error('MCP export-design error:', error);
       throw new Error(`Failed to export design via MCP: ${error.message}`);
     }
+  }
+
+  /**
+   * Export design using Mock
+   */
+  async exportDesignMock(designId, format, quality) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Return a placeholder image URL
+    const width = 1080;
+    const height = 1920;
+    const mockUrl = `https://via.placeholder.com/${width}x${height}/4A90E2/ffffff?text=Weekly+Menu+${format.toUpperCase()}`;
+    
+    return {
+      url: mockUrl,
+      format: format,
+      quality: quality
+    };
   }
 
   /**
@@ -244,131 +319,79 @@ class CanvaService {
   async exportDesignREST(designId, format, quality) {
     try {
       if (!this.accessToken) {
-        throw new Error('Access token required for REST API');
+        throw new Error('Access token required for REST API mode');
       }
 
-      const response = await axios.post(`${CANVA_API_BASE}/designs/${designId}/export`, {
-        format: format,
-        quality: quality
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json'
+      const response = await axios.post(
+        `${CANVA_API_BASE}/designs/${designId}/export`,
+        {
+          format: format.toLowerCase(),
+          quality: quality
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
 
       return response.data;
     } catch (error) {
-      console.error('REST API export-design error:', error.response?.data || error.message);
-      throw new Error(`Failed to export design via REST API: ${error.response?.data?.message || error.message}`);
+      throw new Error(`Failed to export design via REST API: ${error.message}`);
     }
   }
 
   /**
-   * Get export formats
+   * Get design details
    */
-  async getExportFormats(designId) {
-    if (this.useMCP) {
-      return this.getExportFormatsMCP(designId);
+  async getDesign(designId) {
+    if (this.mode === 'MCP') {
+      return this.getDesignMCP(designId);
+    } else if (this.mode === 'REST') {
+      return this.getDesignREST(designId);
     } else {
-      return this.getExportFormatsREST(designId);
+      return this.getDesignMock(designId);
     }
   }
 
   /**
-   * Get export formats using MCP
+   * Get design using Mock
    */
-  async getExportFormatsMCP(designId) {
-    try {
-      const command = `manus-mcp-cli tool call get-export-formats --server canva --input '${JSON.stringify({
-        design_id: designId
-      })}'`;
-
-      const { stdout } = await execPromise(command);
-      return JSON.parse(stdout);
-    } catch (error) {
-      console.error('MCP get-export-formats error:', error);
-      throw new Error(`Failed to get export formats via MCP: ${error.message}`);
-    }
+  async getDesignMock(designId) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    return {
+      id: designId,
+      title: 'Weekly Menu Design',
+      thumbnail: `https://via.placeholder.com/400x600/4A90E2/ffffff?text=Menu+${designId}`,
+      url: `https://www.canva.com/design/${designId}/view`
+    };
   }
 
   /**
-   * Get export formats using REST API
-   */
-  async getExportFormatsREST(designId) {
-    try {
-      if (!this.accessToken) {
-        throw new Error('Access token required for REST API');
-      }
-
-      const response = await axios.get(`${CANVA_API_BASE}/designs/${designId}/export-formats`, {
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`
-        }
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error('REST API get-export-formats error:', error.response?.data || error.message);
-      throw new Error(`Failed to get export formats via REST API: ${error.response?.data?.message || error.message}`);
-    }
-  }
-
-  /**
-   * Upload asset to Canva
+   * Upload asset
    */
   async uploadAsset(fileUrl, fileName) {
-    if (this.useMCP) {
-      return this.uploadAssetMCP(fileUrl, fileName);
-    } else {
-      return this.uploadAssetREST(fileUrl, fileName);
+    if (this.mode === 'MOCK') {
+      return this.uploadAssetMock(fileUrl, fileName);
     }
+    // MCP and REST implementations would go here
+    throw new Error('Asset upload not implemented for this mode');
   }
 
   /**
-   * Upload asset using MCP
+   * Upload asset using Mock
    */
-  async uploadAssetMCP(fileUrl, fileName) {
-    try {
-      const command = `manus-mcp-cli tool call upload-asset --server canva --input '${JSON.stringify({
-        file_url: fileUrl,
-        file_name: fileName
-      })}'`;
-
-      const { stdout } = await execPromise(command);
-      return JSON.parse(stdout);
-    } catch (error) {
-      console.error('MCP upload-asset error:', error);
-      throw new Error(`Failed to upload asset via MCP: ${error.message}`);
-    }
-  }
-
-  /**
-   * Upload asset using REST API
-   */
-  async uploadAssetREST(fileUrl, fileName) {
-    try {
-      if (!this.accessToken) {
-        throw new Error('Access token required for REST API');
-      }
-
-      const response = await axios.post(`${CANVA_API_BASE}/assets/upload`, {
-        file_url: fileUrl,
-        file_name: fileName
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error('REST API upload-asset error:', error.response?.data || error.message);
-      throw new Error(`Failed to upload asset via REST API: ${error.response?.data?.message || error.message}`);
-    }
+  async uploadAssetMock(fileUrl, fileName) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return {
+      assetId: 'mock-asset-' + Date.now(),
+      url: fileUrl,
+      name: fileName
+    };
   }
 }
 
-// Export singleton instance
 module.exports = new CanvaService();
