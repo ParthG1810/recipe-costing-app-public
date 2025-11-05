@@ -191,8 +191,17 @@ export default function RecipeCreationContent() {
       cost,
     };
 
-    setIngredients([...ingredients, newIngredient]);
-    setSelectedProduct('');
+    const updatedIngredients = [...ingredients, newIngredient];
+    setIngredients(updatedIngredients);
+    
+    // Get list of used product IDs
+    const usedProductIds = updatedIngredients.map(ing => ing.product_id);
+    
+    // Find next available product that hasn't been used
+    const availableProduct = products.find(p => !usedProductIds.includes(p.id));
+    
+    // Set next available product or empty if all products used
+    setSelectedProduct(availableProduct ? availableProduct.id : '');
     setQuantity('');
     setUnit('g');
   };
@@ -367,11 +376,13 @@ export default function RecipeCreationContent() {
                           sx={{ fontSize: '1.05rem' }}
                           label="Select Product"
                         >
-                          {products.map((product) => (
-                            <MenuItem key={product.id} value={product.id} sx={{ fontSize: '1.05rem' }}>
-                              {product.name}
-                            </MenuItem>
-                          ))}
+                          {products
+                            .filter(product => !ingredients.some(ing => ing.product_id === product.id))
+                            .map((product) => (
+                              <MenuItem key={product.id} value={product.id} sx={{ fontSize: '1.05rem' }}>
+                                {product.name}
+                              </MenuItem>
+                            ))}
                         </Select>
                       </FormControl>
                     </Grid>
