@@ -413,59 +413,42 @@ export default function RecipeCreationContent() {
                 </CardContent>
               </Card>
 
-              {ingredients.map((ingredient, index) => (
-                <Card key={index} variant="outlined" sx={{ position: 'relative', mb: 2 }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        Ingredient {index + 1}
-                      </Typography>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => removeIngredient(index)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} sm={4}>
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                          Product
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontSize: '1.05rem', fontWeight: 500 }}>
-                          {ingredient.product_name}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={3}>
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                          Quantity
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontSize: '1.05rem', fontWeight: 500 }}>
-                          {ingredient.quantity}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={2}>
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                          Unit
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontSize: '1.05rem', fontWeight: 500 }}>
-                          {ingredient.unit}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={3}>
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                          Cost
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontSize: '1.05rem', fontWeight: 600, color: 'primary.main' }}>
-                          ${ingredient.cost.toFixed(2)}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-              ))}
+              {ingredients.length > 0 && (
+                <TableContainer component={Paper} variant="outlined" sx={{ mt: 3 }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600 }}>Product</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Quantity</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Unit</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Vendor</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Cost</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: 60 }}></TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {ingredients.map((ingredient, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{ingredient.product_name}</TableCell>
+                          <TableCell>{ingredient.quantity}</TableCell>
+                          <TableCell>{ingredient.unit}</TableCell>
+                          <TableCell>{ingredient.vendor_name || '-'}</TableCell>
+                          <TableCell>${ingredient.cost.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => removeIngredient(index)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
 
               {ingredients.length > 0 && (
                 <Card variant="outlined" sx={{ mt: 2, bgcolor: 'grey.50' }}>
