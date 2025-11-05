@@ -557,7 +557,16 @@ export default function RecipeCreationContent() {
     <DashboardLayout>
       <Box sx={{ p: 3 }}>
         {/* Navigation Buttons - Above header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+        <Box sx={{ 
+          position: 'sticky', 
+          top: 0, 
+          zIndex: 10, 
+          backgroundColor: 'white', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          mb: 3,
+          py: 2
+        }}>
           <Button
             disabled={activeStep === 0}
             onClick={handleBack}
