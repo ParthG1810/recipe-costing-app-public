@@ -366,10 +366,12 @@ app.delete('/api/recipes/:id', async (req, res) => {
 const recipeImagesRouter = require('./routes/recipeImages');
 const weeklyMenusRouter = require('./routes/weeklyMenus');
 const canvaTemplatesRouter = require('./routes/canvaTemplates');
+const canvaAuthRouter = require('./routes/canvaAuth');
 
 app.use('/api/recipe-images', recipeImagesRouter);
 app.use('/api/weekly-menus', weeklyMenusRouter);
 app.use('/api/canva', canvaTemplatesRouter);
+app.use('/api/canva/auth', canvaAuthRouter);
 
 // ============================================
 // ERROR HANDLING

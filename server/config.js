@@ -36,6 +36,9 @@ const config = {
   // Canva Integration
   canva: {
     enabled: process.env.CANVA_ENABLED === 'true',
+    apiKey: process.env.CANVA_API_KEY || '',
+    apiSecret: process.env.CANVA_API_SECRET || '',
+    redirectUri: process.env.CANVA_REDIRECT_URI || 'http://localhost:3000/api/canva/auth/callback'
   },
 
   // Image Processing

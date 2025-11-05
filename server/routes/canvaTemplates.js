@@ -9,9 +9,9 @@ const config = require('../config');
 const { 
   successResponse, 
   errorResponse, 
-  generateToken,
-  executeCanvaMCP 
+  generateToken
 } = require('../utils');
+const canvaService = require('../services/canvaService');
 
 /**
  * POST /api/canva/generate-template
@@ -36,11 +36,8 @@ router.post('/generate-template', async (req, res) => {
 
     const prompt = customPrompt || stylePrompts[style] || stylePrompts.modern;
 
-    // Generate design with Canva AI
-    const response = await executeCanvaMCP('generate-design', {
-      query: prompt,
-      design_type: 'flyer'
-    });
+    // Generate design with Canva AI (uses MCP or REST API automatically)
+    const response = await canvaService.generateDesign(prompt, 'Flyer');
 
     if (!response.candidates || response.candidates.length === 0) {
       throw new Error('No templates generated');
@@ -70,10 +67,8 @@ router.post('/convert-candidate', async (req, res) => {
       return res.status(400).json(errorResponse('Candidate ID is required'));
     }
 
-    // Convert candidate to design
-    const response = await executeCanvaMCP('create-design-from-candidate', {
-      candidate_id: candidateId
-    });
+    // Convert candidate to design (uses MCP or REST API automatically)
+    const response = await canvaService.createDesignFromCandidate(candidateId, req.body.jobId);
 
     const designId = response.design_id || response.id;
 
@@ -81,10 +76,8 @@ router.post('/convert-candidate', async (req, res) => {
       throw new Error('Failed to get design ID');
     }
 
-    // Get design details
-    const designDetails = await executeCanvaMCP('get-design', {
-      design_id: designId
-    });
+    // Get design details (uses MCP or REST API automatically)
+    const designDetails = await canvaService.getDesign(designId);
 
     // Save template to database
     const [result] = await pool.query(
@@ -269,15 +262,11 @@ router.post('/export-menu', async (req, res) => {
       return res.status(400).json(errorResponse('Menu does not have a Canva design'));
     }
 
-    // Export design
+    // Export design (uses MCP or REST API automatically)
     const exportFormat = format || config.menuExport.format;
     const exportQuality = quality || config.menuExport.quality;
 
-    const response = await executeCanvaMCP('export-design', {
-      design_id: menu.canva_design_id,
-      format: exportFormat,
-      quality: exportQuality
-    });
+    const response = await canvaService.exportDesign(menu.canva_design_id, exportFormat, exportQuality);
 
     const exportUrl = response.export_url || response.url;
 
