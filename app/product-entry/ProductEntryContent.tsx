@@ -27,6 +27,9 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
+  ArrowBack as ArrowBackIcon,
+  ArrowForward as ArrowForwardIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 import DashboardLayout from '../components/DashboardLayout';
 
@@ -244,7 +247,7 @@ export default function ProductEntryContent() {
               <Typography variant="h6" gutterBottom>
                 Product Information
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, mt: 3 }}>
                 <TextField
                   label="Product Name"
                   required
@@ -252,15 +255,27 @@ export default function ProductEntryContent() {
                   value={formData.name}
                   onChange={(e) => handleFormChange('name', e.target.value)}
                   placeholder="e.g., All-Purpose Flour"
+                  InputProps={{
+                    sx: { fontSize: '1.1rem', padding: '4px 0' }
+                  }}
+                  InputLabelProps={{
+                    sx: { fontSize: '1.05rem' }
+                  }}
                 />
                 <TextField
                   label="Description"
                   fullWidth
                   multiline
-                  rows={4}
+                  rows={5}
                   value={formData.description}
                   onChange={(e) => handleFormChange('description', e.target.value)}
                   placeholder="e.g., High-quality all-purpose flour for baking"
+                  InputProps={{
+                    sx: { fontSize: '1.05rem' }
+                  }}
+                  InputLabelProps={{
+                    sx: { fontSize: '1.05rem' }
+                  }}
                 />
               </Box>
             </CardContent>
@@ -322,7 +337,7 @@ export default function ProductEntryContent() {
                     </Box>
                   </Box>
 
-                  <Grid container spacing={2}>
+                  <Grid container spacing={3}>
                     <Grid item xs={12}>
                       <TextField
                         label="Vendor Name"
@@ -331,6 +346,12 @@ export default function ProductEntryContent() {
                         value={vendor.vendor_name}
                         onChange={(e) => handleVendorChange(index, 'vendor_name', e.target.value)}
                         placeholder="e.g., ABC Suppliers"
+                        InputProps={{
+                          sx: { fontSize: '1.05rem' }
+                        }}
+                        InputLabelProps={{
+                          sx: { fontSize: '1.05rem' }
+                        }}
                       />
                     </Grid>
                     <Grid item xs={12} sm={4}>
@@ -343,6 +364,12 @@ export default function ProductEntryContent() {
                         onChange={(e) => handleVendorChange(index, 'price', e.target.value)}
                         placeholder="0.00"
                         inputProps={{ step: '0.01', min: '0' }}
+                        InputProps={{
+                          sx: { fontSize: '1.05rem' }
+                        }}
+                        InputLabelProps={{
+                          sx: { fontSize: '1.05rem' }
+                        }}
                       />
                     </Grid>
                     <Grid item xs={12} sm={4}>
@@ -355,23 +382,30 @@ export default function ProductEntryContent() {
                         onChange={(e) => handleVendorChange(index, 'weight', e.target.value)}
                         placeholder="0"
                         inputProps={{ step: '0.01', min: '0' }}
+                        InputProps={{
+                          sx: { fontSize: '1.05rem' }
+                        }}
+                        InputLabelProps={{
+                          sx: { fontSize: '1.05rem' }
+                        }}
                       />
                     </Grid>
                     <Grid item xs={12} sm={4}>
                       <FormControl fullWidth>
-                        <InputLabel>Package Size</InputLabel>
+                        <InputLabel sx={{ fontSize: '1.05rem' }}>Package Size</InputLabel>
                         <Select
                           value={vendor.package_size}
                           onChange={(e) => handleVendorChange(index, 'package_size', e.target.value)}
+                          sx={{ fontSize: '1.05rem' }}
                           label="Package Size"
                         >
-                          <MenuItem value="g">Grams (g)</MenuItem>
-                          <MenuItem value="kg">Kilograms (kg)</MenuItem>
-                          <MenuItem value="lb">Pounds (lb)</MenuItem>
-                          <MenuItem value="oz">Ounces (oz)</MenuItem>
-                          <MenuItem value="ml">Milliliters (ml)</MenuItem>
-                          <MenuItem value="l">Liters (l)</MenuItem>
-                          <MenuItem value="pcs">Pieces (pcs)</MenuItem>
+                          <MenuItem value="g" sx={{ fontSize: '1.05rem' }}>Grams (g)</MenuItem>
+                          <MenuItem value="kg" sx={{ fontSize: '1.05rem' }}>Kilograms (kg)</MenuItem>
+                          <MenuItem value="lb" sx={{ fontSize: '1.05rem' }}>Pounds (lb)</MenuItem>
+                          <MenuItem value="oz" sx={{ fontSize: '1.05rem' }}>Ounces (oz)</MenuItem>
+                          <MenuItem value="ml" sx={{ fontSize: '1.05rem' }}>Milliliters (ml)</MenuItem>
+                          <MenuItem value="l" sx={{ fontSize: '1.05rem' }}>Liters (l)</MenuItem>
+                          <MenuItem value="pcs" sx={{ fontSize: '1.05rem' }}>Pieces (pcs)</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>
@@ -500,6 +534,7 @@ export default function ProductEntryContent() {
               <Button
                 disabled={activeStep === 0}
                 onClick={handleBack}
+                startIcon={<ArrowBackIcon />}
               >
                 Back
               </Button>
@@ -508,7 +543,7 @@ export default function ProductEntryContent() {
                   <Button
                     variant="contained"
                     onClick={handleSubmit}
-                    startIcon={<CheckCircleIcon />}
+                    startIcon={<SaveIcon />}
                   >
                     {isEditMode ? 'Update Product' : 'Create Product'}
                   </Button>
@@ -517,6 +552,7 @@ export default function ProductEntryContent() {
                     variant="contained"
                     onClick={handleNext}
                     disabled={!isStepValid(activeStep)}
+                    endIcon={<ArrowForwardIcon />}
                   >
                     Next
                   </Button>

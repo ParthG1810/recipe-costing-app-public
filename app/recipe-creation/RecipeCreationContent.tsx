@@ -297,7 +297,7 @@ export default function RecipeCreationContent() {
               <Typography variant="h6" gutterBottom>
                 Recipe Information
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, mt: 3 }}>
                 <TextField
                   label="Recipe Name"
                   value={recipeName}
@@ -305,15 +305,27 @@ export default function RecipeCreationContent() {
                   required
                   fullWidth
                   placeholder="e.g., Chocolate Chip Cookies"
+                  InputProps={{
+                    sx: { fontSize: '1.1rem', padding: '4px 0' }
+                  }}
+                  InputLabelProps={{
+                    sx: { fontSize: '1.05rem' }
+                  }}
                 />
                 <TextField
                   label="Description"
                   value={recipeDescription}
                   onChange={(e) => setRecipeDescription(e.target.value)}
                   multiline
-                  rows={4}
+                  rows={5}
                   fullWidth
                   placeholder="Describe your recipe..."
+                  InputProps={{
+                    sx: { fontSize: '1.05rem' }
+                  }}
+                  InputLabelProps={{
+                    sx: { fontSize: '1.05rem' }
+                  }}
                 />
               </Box>
             </CardContent>
@@ -327,17 +339,18 @@ export default function RecipeCreationContent() {
               <Typography variant="h6" gutterBottom>
                 Add Ingredients
               </Typography>
-              <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid container spacing={3} sx={{ mt: 2 }}>
                 <Grid item xs={12} md={5}>
                   <FormControl fullWidth>
-                    <InputLabel>Select Product</InputLabel>
+                    <InputLabel sx={{ fontSize: '1.05rem' }}>Select Product</InputLabel>
                     <Select
                       value={selectedProduct}
                       onChange={(e) => setSelectedProduct(e.target.value as number)}
                       label="Select Product"
+                      sx={{ fontSize: '1.05rem' }}
                     >
                       {products.map((product) => (
-                        <MenuItem key={product.id} value={product.id}>
+                        <MenuItem key={product.id} value={product.id} sx={{ fontSize: '1.05rem' }}>
                           {product.name}
                         </MenuItem>
                       ))}
@@ -352,16 +365,22 @@ export default function RecipeCreationContent() {
                     onChange={(e) => setQuantity(e.target.value)}
                     fullWidth
                     inputProps={{ min: 0, step: 0.01 }}
+                    InputProps={{
+                      sx: { fontSize: '1.05rem' }
+                    }}
+                    InputLabelProps={{
+                      sx: { fontSize: '1.05rem' }
+                    }}
                   />
                 </Grid>
                 <Grid item xs={12} md={2}>
                   <FormControl fullWidth>
-                    <InputLabel>Unit</InputLabel>
-                    <Select value={unit} onChange={(e) => setUnit(e.target.value)} label="Unit">
-                      <MenuItem value="g">g</MenuItem>
-                      <MenuItem value="kg">kg</MenuItem>
-                      <MenuItem value="lb">lb</MenuItem>
-                      <MenuItem value="oz">oz</MenuItem>
+                    <InputLabel sx={{ fontSize: '1.05rem' }}>Unit</InputLabel>
+                    <Select value={unit} onChange={(e) => setUnit(e.target.value)} label="Unit" sx={{ fontSize: '1.05rem' }}>
+                      <MenuItem value="g" sx={{ fontSize: '1.05rem' }}>g</MenuItem>
+                      <MenuItem value="kg" sx={{ fontSize: '1.05rem' }}>kg</MenuItem>
+                      <MenuItem value="lb" sx={{ fontSize: '1.05rem' }}>lb</MenuItem>
+                      <MenuItem value="oz" sx={{ fontSize: '1.05rem' }}>oz</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -371,7 +390,7 @@ export default function RecipeCreationContent() {
                     onClick={addIngredient}
                     startIcon={<AddIcon />}
                     fullWidth
-                    sx={{ height: '56px' }}
+                    sx={{ height: '56px', fontSize: '1.05rem' }}
                   >
                     Add
                   </Button>
