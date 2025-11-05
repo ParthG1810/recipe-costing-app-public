@@ -239,48 +239,53 @@ export default function ProductEntryContent() {
     switch (step) {
       case 0:
         return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Product Information
-            </Typography>
-            <TextField
-              label="Product Name"
-              required
-              fullWidth
-              value={formData.name}
-              onChange={(e) => handleFormChange('name', e.target.value)}
-              placeholder="e.g., All-Purpose Flour"
-            />
-            <TextField
-              label="Description"
-              fullWidth
-              multiline
-              rows={3}
-              value={formData.description}
-              onChange={(e) => handleFormChange('description', e.target.value)}
-              placeholder="e.g., High-quality all-purpose flour for baking"
-            />
-          </Box>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Product Information
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+                <TextField
+                  label="Product Name"
+                  required
+                  fullWidth
+                  value={formData.name}
+                  onChange={(e) => handleFormChange('name', e.target.value)}
+                  placeholder="e.g., All-Purpose Flour"
+                />
+                <TextField
+                  label="Description"
+                  fullWidth
+                  multiline
+                  rows={4}
+                  value={formData.description}
+                  onChange={(e) => handleFormChange('description', e.target.value)}
+                  placeholder="e.g., High-quality all-purpose flour for baking"
+                />
+              </Box>
+            </CardContent>
+          </Card>
         );
 
       case 1:
         return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">
-                Vendor Details
-              </Typography>
-              <Button
-                variant="outlined"
-                startIcon={<AddIcon />}
-                onClick={addVendor}
-                size="small"
-              >
-                Add Vendor
-              </Button>
-            </Box>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">
+                  Vendor Details
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={addVendor}
+                  size="small"
+                >
+                  Add Vendor
+                </Button>
+              </Box>
 
-            {vendors.map((vendor, index) => (
+              {vendors.map((vendor, index) => (
               <Card key={index} variant="outlined" sx={{ position: 'relative' }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -382,18 +387,21 @@ export default function ProductEntryContent() {
                   )}
                 </CardContent>
               </Card>
-            ))}
-          </Box>
+              ))}
+            </CardContent>
+          </Card>
         );
 
       case 2:
         return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Review Product Details
-            </Typography>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Review Product Details
+              </Typography>
 
-            <Card variant="outlined">
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+                <Card variant="outlined">
               <CardContent>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   PRODUCT INFORMATION
@@ -447,7 +455,9 @@ export default function ProductEntryContent() {
                 </Box>
               </CardContent>
             </Card>
-          </Box>
+              </Box>
+            </CardContent>
+          </Card>
         );
 
       default:
@@ -467,45 +477,54 @@ export default function ProductEntryContent() {
           </Typography>
         )}
 
-        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
+        {/* Stepper */}
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Stepper activeStep={activeStep}>
+              {steps.map((label) => (
+                <Step key={label}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </CardContent>
+        </Card>
 
-        <Paper sx={{ p: 4, maxWidth: 800, mx: 'auto' }}>
-          {getStepContent(activeStep)}
+        {/* Step Content */}
+        {getStepContent(activeStep)}
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-            <Button
-              disabled={activeStep === 0}
-              onClick={handleBack}
-            >
-              Back
-            </Button>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              {activeStep === steps.length - 1 ? (
-                <Button
-                  variant="contained"
-                  onClick={handleSubmit}
-                  startIcon={<CheckCircleIcon />}
-                >
-                  {isEditMode ? 'Update Product' : 'Create Product'}
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  onClick={handleNext}
-                  disabled={!isStepValid(activeStep)}
-                >
-                  Next
-                </Button>
-              )}
+        {/* Navigation Buttons */}
+        <Card sx={{ mt: 3 }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Button
+                disabled={activeStep === 0}
+                onClick={handleBack}
+              >
+                Back
+              </Button>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                {activeStep === steps.length - 1 ? (
+                  <Button
+                    variant="contained"
+                    onClick={handleSubmit}
+                    startIcon={<CheckCircleIcon />}
+                  >
+                    {isEditMode ? 'Update Product' : 'Create Product'}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    onClick={handleNext}
+                    disabled={!isStepValid(activeStep)}
+                  >
+                    Next
+                  </Button>
+                )}
+              </Box>
             </Box>
-          </Box>
-        </Paper>
+          </CardContent>
+        </Card>
 
         <Snackbar
           open={snackbar.open}
