@@ -19,6 +19,10 @@ import {
   Inventory as InventoryIcon,
   Restaurant as RestaurantIcon,
   MenuBook as MenuBookIcon,
+  CalendarMonth as CalendarIcon,
+  Image as ImageIcon,
+  Palette as PaletteIcon,
+  Share as ShareIcon,
 } from '@mui/icons-material';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -37,6 +41,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { text: 'Product Management', icon: <InventoryIcon />, path: '/product-management' },
     { text: 'Recipe Creation', icon: <RestaurantIcon />, path: '/recipe-creation' },
     { text: 'Recipe Management', icon: <MenuBookIcon />, path: '/recipe-management' },
+  ];
+
+  const weeklyMenuItems = [
+    { text: 'Recipe Images', icon: <ImageIcon />, path: '/weekly-menu' },
+    { text: 'Menu Builder', icon: <CalendarIcon />, path: '/weekly-menu/builder' },
+    { text: 'Templates', icon: <PaletteIcon />, path: '/weekly-menu/templates' },
+    { text: 'Export & Share', icon: <ShareIcon />, path: '/weekly-menu/finalize' },
   ];
 
   return (
@@ -77,6 +88,35 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <Divider />
         <List>
           {menuItems.map((item) => (
+            <ListItem key={item.text} disablePadding>
+              <ListItemButton
+                selected={pathname === item.path}
+                onClick={() => router.push(item.path)}
+                sx={{
+                  '&.Mui-selected': {
+                    backgroundColor: '#e3f2fd',
+                    '&:hover': {
+                      backgroundColor: '#bbdefb',
+                    },
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ color: pathname === item.path ? '#1976d2' : 'inherit' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <Divider sx={{ my: 1 }} />
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+            WEEKLY MENU
+          </Typography>
+        </Box>
+        <List>
+          {weeklyMenuItems.map((item) => (
             <ListItem key={item.text} disablePadding>
               <ListItemButton
                 selected={pathname === item.path}
