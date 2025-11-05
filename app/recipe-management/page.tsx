@@ -204,12 +204,27 @@ export default function RecipeManagement() {
     }, 0);
   };
 
-  const toggleRow = (recipeId: number) => {
+  const toggleRow = async (recipeId: number) => {
     const newExpandedRows = new Set(expandedRows);
     if (newExpandedRows.has(recipeId)) {
       newExpandedRows.delete(recipeId);
     } else {
       newExpandedRows.add(recipeId);
+      
+      // Fetch full recipe details with ingredients and vendors
+      try {
+        const response = await fetch(`http://localhost:3001/api/recipes/${recipeId}`);
+        const recipeData = await response.json();
+        
+        // Update the recipe in the recipes array with full ingredient data
+        setRecipes(prevRecipes => 
+          prevRecipes.map(r => 
+            r.id === recipeId ? { ...r, ingredients: recipeData.ingredients } : r
+          )
+        );
+      } catch (error) {
+        console.error('Error fetching recipe details:', error);
+      }
     }
     setExpandedRows(newExpandedRows);
   };
@@ -354,6 +369,11 @@ export default function RecipeManagement() {
                           <Typography variant="h6" gutterBottom component="div">
                             Ingredient Details
                           </Typography>
+                          {!recipe.ingredients || recipe.ingredients.length === 0 || !recipe.ingredients[0]?.vendors ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                              Loading ingredient details...
+                            </Typography>
+                          ) : (
                           <Table size="small">
                             <TableHead>
                               <TableRow>
@@ -411,6 +431,7 @@ export default function RecipeManagement() {
                               </TableRow>
                             </TableBody>
                           </Table>
+                          )}
                         </Box>
                       </Collapse>
                     </TableCell>
