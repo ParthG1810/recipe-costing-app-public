@@ -254,7 +254,7 @@ export default function MenuFinalizationContent() {
       {/* Main Content */}
       <Grid container spacing={3} sx={{ mt: 1 }}>
         {/* Left Panel - Menu Selection */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -301,7 +301,7 @@ export default function MenuFinalizationContent() {
         </Grid>
 
         {/* Right Panel - Export & Share */}
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           {menu ? (
             <>
               {/* Menu Details */}
@@ -313,7 +313,7 @@ export default function MenuFinalizationContent() {
                   <Divider sx={{ mb: 2 }} />
                   
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography variant="body2" color="text.secondary">
                         Week Start Date
                       </Typography>
@@ -321,7 +321,7 @@ export default function MenuFinalizationContent() {
                         {formatDate(menu.week_start_date)}
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography variant="body2" color="text.secondary">
                         Total Items
                       </Typography>
@@ -330,7 +330,7 @@ export default function MenuFinalizationContent() {
                       </Typography>
                     </Grid>
                     {menu.description && (
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <Typography variant="body2" color="text.secondary">
                           Description
                         </Typography>
@@ -339,7 +339,7 @@ export default function MenuFinalizationContent() {
                         </Typography>
                       </Grid>
                     )}
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         {menu.canva_design_id && (
                           <Chip label="Has Canva Design" color="success" size="small" />
@@ -365,7 +365,7 @@ export default function MenuFinalizationContent() {
                   <Divider sx={{ mb: 2 }} />
                   
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <FormControl fullWidth>
                         <InputLabel>Format</InputLabel>
                         <Select
@@ -381,7 +381,7 @@ export default function MenuFinalizationContent() {
                         </Select>
                       </FormControl>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <FormControl fullWidth>
                         <InputLabel>Quality</InputLabel>
                         <Select
@@ -397,7 +397,7 @@ export default function MenuFinalizationContent() {
                         </Select>
                       </FormControl>
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <Button
                         fullWidth
                         variant="contained"
@@ -415,7 +415,7 @@ export default function MenuFinalizationContent() {
                       )}
                     </Grid>
                     {menu.export_url && (
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
                           <Typography variant="body2" color="text.secondary" gutterBottom>
                             Last Export URL
@@ -499,7 +499,7 @@ export default function MenuFinalizationContent() {
           </Box>
 
           <Grid container spacing={2}>
-            <Grid item xs={6}>
+            <Grid size={6}>
               <Button
                 fullWidth
                 variant="outlined"
@@ -509,7 +509,7 @@ export default function MenuFinalizationContent() {
                 Generate QR
               </Button>
             </Grid>
-            <Grid item xs={6}>
+            <Grid size={6}>
               <Button
                 fullWidth
                 variant="outlined"

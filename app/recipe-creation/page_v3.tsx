@@ -262,7 +262,7 @@ export default function RecipeCreation() {
                   Add Ingredient
                 </Typography>
                 <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={12} md={6}>
                     <FormControl fullWidth>
                       <InputLabel>Product</InputLabel>
                       <Select
@@ -285,7 +285,7 @@ export default function RecipeCreation() {
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12} md={3}>
+                  <Grid size={12} md={3}>
                     <TextField
                       label="Quantity"
                       type="number"
@@ -295,7 +295,7 @@ export default function RecipeCreation() {
                       inputProps={{ step: '0.01', min: '0' }}
                     />
                   </Grid>
-                  <Grid item xs={12} md={3}>
+                  <Grid size={12} md={3}>
                     <FormControl fullWidth>
                       <InputLabel>Unit</InputLabel>
                       <Select
@@ -313,7 +313,7 @@ export default function RecipeCreation() {
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={12}>
                     <Button
                       variant="contained"
                       startIcon={<AddIcon />}

@@ -306,7 +306,7 @@ export default function WeeklyMenuBuilderContent() {
           <Divider sx={{ mb: 2 }} />
           
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth
                 label="Week Start Date (Monday)"
@@ -316,7 +316,7 @@ export default function WeeklyMenuBuilderContent() {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth
                 label="Menu Name"
@@ -325,7 +325,7 @@ export default function WeeklyMenuBuilderContent() {
                 placeholder="e.g., Diwali Special Week"
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth
                 label="Description (Optional)"
@@ -341,7 +341,7 @@ export default function WeeklyMenuBuilderContent() {
       {/* 6-Day Menu Builder */}
       <Grid container spacing={2}>
         {DAYS.map((day) => (
-          <Grid item xs={12} md={6} key={day}>
+          <Grid size={12} md={6} key={day}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

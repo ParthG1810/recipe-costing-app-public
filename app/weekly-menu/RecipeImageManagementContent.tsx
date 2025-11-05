@@ -286,7 +286,7 @@ export default function RecipeImageManagementContent() {
       {/* Main Content */}
       <Grid container spacing={3} sx={{ mt: 1 }}>
         {/* Left Panel - Recipe List */}
-        <Grid item xs={12} md={4}>
+        <Grid size={12} md={4}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -324,7 +324,7 @@ export default function RecipeImageManagementContent() {
         </Grid>
 
         {/* Right Panel - Image Gallery */}
-        <Grid item xs={12} md={8}>
+        <Grid size={12} md={8}>
           {selectedRecipe ? (
             <>
               {/* Upload Section */}

@@ -275,7 +275,7 @@ export default function TemplateLibraryContent() {
         ) : (
           <Grid container spacing={3}>
             {templates.map((template) => (
-              <Grid item xs={12} sm={6} md={4} key={template.id}>
+              <Grid size={12} sm={6} md={4} key={template.id}>
                 <Card>
                   {template.thumbnail_url && (
                     <CardMedia
@@ -411,7 +411,7 @@ export default function TemplateLibraryContent() {
 
           <Grid container spacing={2}>
             {candidates.map((candidate) => (
-              <Grid item xs={12} sm={6} key={candidate.id}>
+              <Grid size={12} sm={6} key={candidate.id}>
                 <Card>
                   {candidate.thumbnail_url && (
                     <CardMedia

@@ -224,7 +224,7 @@ export default function RecipeCreation() {
 
         <Grid container spacing={3}>
           {/* Recipe Information */}
-          <Grid item xs={12} md={6}>
+          <Grid size={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -254,7 +254,7 @@ export default function RecipeCreation() {
           </Grid>
 
           {/* Add Ingredient */}
-          <Grid item xs={12} md={6}>
+          <Grid size={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -324,7 +324,7 @@ export default function RecipeCreation() {
           </Grid>
 
           {/* Ingredients Table */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

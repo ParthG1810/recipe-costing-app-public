@@ -260,7 +260,7 @@ export default function RecipeCreation() {
 
         <Grid container spacing={3}>
           {/* Recipe Form */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
@@ -268,7 +268,7 @@ export default function RecipeCreation() {
                 </Typography>
                 <form onSubmit={handleSubmit}>
                   <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <TextField
                         fullWidth
                         required
@@ -277,7 +277,7 @@ export default function RecipeCreation() {
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       />
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <TextField
                         fullWidth
                         label="Description"
@@ -289,12 +289,12 @@ export default function RecipeCreation() {
                     </Grid>
 
                     {/* Add Ingredient Section */}
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
                         Add Ingredients
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={5}>
+                    <Grid size={{ xs: 12, sm: 5 }}>
                       <FormControl fullWidth size="small">
                         <InputLabel>Select Product</InputLabel>
                         <Select
@@ -312,7 +312,7 @@ export default function RecipeCreation() {
                         </Select>
                       </FormControl>
                     </Grid>
-                    <Grid item xs={12} sm={3}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
                       <TextField
                         fullWidth
                         size="small"
@@ -324,7 +324,7 @@ export default function RecipeCreation() {
                         }
                       />
                     </Grid>
-                    <Grid item xs={12} sm={3}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
                       <FormControl fullWidth size="small">
                         <InputLabel>Unit</InputLabel>
                         <Select
@@ -339,7 +339,7 @@ export default function RecipeCreation() {
                         </Select>
                       </FormControl>
                     </Grid>
-                    <Grid item xs={12} sm={1}>
+                    <Grid size={{ xs: 12, sm: 1 }}>
                       <IconButton color="primary" onClick={handleAddIngredient}>
                         <AddIcon />
                       </IconButton>
@@ -347,7 +347,7 @@ export default function RecipeCreation() {
 
                     {/* Ingredients List */}
                     {ingredients.length > 0 && (
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
                           <Table size="small">
                             <TableHead>
@@ -395,7 +395,7 @@ export default function RecipeCreation() {
                       </Grid>
                     )}
 
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
                         Create Recipe
                       </Button>
@@ -407,7 +407,7 @@ export default function RecipeCreation() {
           </Grid>
 
           {/* Recipes List */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>

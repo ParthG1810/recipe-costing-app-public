@@ -338,7 +338,7 @@ export default function ProductEntryContent() {
                   </Box>
 
                   <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <TextField
                         label="Vendor Name"
                         required
@@ -354,7 +354,7 @@ export default function ProductEntryContent() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <TextField
                         label="Price"
                         required
@@ -372,7 +372,7 @@ export default function ProductEntryContent() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <TextField
                         label="Weight"
                         required
@@ -390,7 +390,7 @@ export default function ProductEntryContent() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <FormControl fullWidth>
                         <InputLabel sx={{ fontSize: '1.05rem' }}>Package Size</InputLabel>
                         <Select

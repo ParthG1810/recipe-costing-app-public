@@ -372,7 +372,7 @@ export default function RecipeCreationContent() {
               <Card variant="outlined" sx={{ position: 'relative' }}>
                 <CardContent>
                   <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <FormControl fullWidth>
                         <InputLabel sx={{ fontSize: '1.05rem' }}>Select Product</InputLabel>
                         <Select
@@ -391,7 +391,7 @@ export default function RecipeCreationContent() {
                         </Select>
                       </FormControl>
                     </Grid>
-                    <Grid item xs={12} sm={3}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
                       <TextField
                         label="Quantity"
                         required
@@ -409,7 +409,7 @@ export default function RecipeCreationContent() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={3}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
                       <FormControl fullWidth>
                         <InputLabel sx={{ fontSize: '1.05rem' }}>Unit</InputLabel>
                         <Select

@@ -256,7 +256,7 @@ export default function ProductEntry() {
                   </Box>
 
                   <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <TextField
                         label="Vendor Name"
                         required
@@ -266,7 +266,7 @@ export default function ProductEntry() {
                         placeholder="e.g., ABC Suppliers"
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <TextField
                         label="Price"
                         required
@@ -278,7 +278,7 @@ export default function ProductEntry() {
                         inputProps={{ step: '0.01', min: '0' }}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <TextField
                         label="Weight"
                         required
@@ -290,7 +290,7 @@ export default function ProductEntry() {
                         inputProps={{ step: '0.01', min: '0' }}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <FormControl fullWidth>
                         <InputLabel>Package Size</InputLabel>
                         <Select

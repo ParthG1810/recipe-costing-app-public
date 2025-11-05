@@ -595,7 +595,7 @@ export default function ProductManagement() {
                         </Box>
 
                         <Grid container spacing={2}>
-                          <Grid item xs={12}>
+                          <Grid size={12}>
                             <TextField
                               label="Vendor Name"
                               fullWidth
@@ -603,7 +603,7 @@ export default function ProductManagement() {
                               onChange={(e) => handleVendorChange(index, 'vendor_name', e.target.value)}
                             />
                           </Grid>
-                          <Grid item xs={12} sm={4}>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                               label="Price"
                               fullWidth
@@ -613,7 +613,7 @@ export default function ProductManagement() {
                               inputProps={{ step: '0.01', min: '0' }}
                             />
                           </Grid>
-                          <Grid item xs={12} sm={4}>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                               label="Weight"
                               fullWidth
@@ -623,7 +623,7 @@ export default function ProductManagement() {
                               inputProps={{ step: '0.01', min: '0' }}
                             />
                           </Grid>
-                          <Grid item xs={12} sm={4}>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <FormControl fullWidth>
                               <InputLabel>Package Size</InputLabel>
                               <Select
