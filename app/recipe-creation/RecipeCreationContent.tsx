@@ -378,7 +378,7 @@ export default function RecipeCreationContent() {
                         <Select
                           value={selectedProduct}
                           onChange={(e) => setSelectedProduct(e.target.value as number)}
-                          sx={{ fontSize: '1.05rem' }}
+                          sx={{ fontSize: '1.05rem', minWidth: '200px' }}
                           label="Select Product"
                         >
                           {products
