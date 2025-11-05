@@ -52,13 +52,16 @@ async function initDatabase() {
         description TEXT,
         vendor1_name VARCHAR(255),
         vendor1_price DECIMAL(10, 2),
-        vendor1_package_size VARCHAR(10) DEFAULT 'g',
+        vendor1_weight DECIMAL(10, 2),
+        vendor1_package_size VARCHAR(10) DEFAULT 'kg',
         vendor2_name VARCHAR(255),
         vendor2_price DECIMAL(10, 2),
-        vendor2_package_size VARCHAR(10) DEFAULT 'g',
+        vendor2_weight DECIMAL(10, 2),
+        vendor2_package_size VARCHAR(10) DEFAULT 'kg',
         vendor3_name VARCHAR(255),
         vendor3_price DECIMAL(10, 2),
-        vendor3_package_size VARCHAR(10) DEFAULT 'g',
+        vendor3_weight DECIMAL(10, 2),
+        vendor3_package_size VARCHAR(10) DEFAULT 'kg',
         default_vendor_index INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -132,12 +135,15 @@ app.post('/api/products', async (req, res) => {
       description,
       vendor1_name,
       vendor1_price,
+      vendor1_weight,
       vendor1_package_size,
       vendor2_name,
       vendor2_price,
+      vendor2_weight,
       vendor2_package_size,
       vendor3_name,
       vendor3_price,
+      vendor3_weight,
       vendor3_package_size,
       default_vendor_index
     } = req.body;
@@ -145,16 +151,16 @@ app.post('/api/products', async (req, res) => {
     const [result] = await pool.query(
       `INSERT INTO products (
         name, description,
-        vendor1_name, vendor1_price, vendor1_package_size,
-        vendor2_name, vendor2_price, vendor2_package_size,
-        vendor3_name, vendor3_price, vendor3_package_size,
+        vendor1_name, vendor1_price, vendor1_weight, vendor1_package_size,
+        vendor2_name, vendor2_price, vendor2_weight, vendor2_package_size,
+        vendor3_name, vendor3_price, vendor3_weight, vendor3_package_size,
         default_vendor_index
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         name, description,
-        vendor1_name, vendor1_price, vendor1_package_size || 'g',
-        vendor2_name, vendor2_price, vendor2_package_size || 'g',
-        vendor3_name, vendor3_price, vendor3_package_size || 'g',
+        vendor1_name, vendor1_price, vendor1_weight, vendor1_package_size || 'kg',
+        vendor2_name, vendor2_price, vendor2_weight, vendor2_package_size || 'kg',
+        vendor3_name, vendor3_price, vendor3_weight, vendor3_package_size || 'kg',
         default_vendor_index || 0
       ]
     );
@@ -173,12 +179,15 @@ app.put('/api/products/:id', async (req, res) => {
       description,
       vendor1_name,
       vendor1_price,
+      vendor1_weight,
       vendor1_package_size,
       vendor2_name,
       vendor2_price,
+      vendor2_weight,
       vendor2_package_size,
       vendor3_name,
       vendor3_price,
+      vendor3_weight,
       vendor3_package_size,
       default_vendor_index
     } = req.body;
@@ -186,16 +195,16 @@ app.put('/api/products/:id', async (req, res) => {
     await pool.query(
       `UPDATE products SET
         name = ?, description = ?,
-        vendor1_name = ?, vendor1_price = ?, vendor1_package_size = ?,
-        vendor2_name = ?, vendor2_price = ?, vendor2_package_size = ?,
-        vendor3_name = ?, vendor3_price = ?, vendor3_package_size = ?,
+        vendor1_name = ?, vendor1_price = ?, vendor1_weight = ?, vendor1_package_size = ?,
+        vendor2_name = ?, vendor2_price = ?, vendor2_weight = ?, vendor2_package_size = ?,
+        vendor3_name = ?, vendor3_price = ?, vendor3_weight = ?, vendor3_package_size = ?,
         default_vendor_index = ?
       WHERE id = ?`,
       [
         name, description,
-        vendor1_name, vendor1_price, vendor1_package_size || 'g',
-        vendor2_name, vendor2_price, vendor2_package_size || 'g',
-        vendor3_name, vendor3_price, vendor3_package_size || 'g',
+        vendor1_name, vendor1_price, vendor1_weight, vendor1_package_size || 'kg',
+        vendor2_name, vendor2_price, vendor2_weight, vendor2_package_size || 'kg',
+        vendor3_name, vendor3_price, vendor3_weight, vendor3_package_size || 'kg',
         default_vendor_index,
         req.params.id
       ]

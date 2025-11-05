@@ -15,7 +15,7 @@
 --   mysql -u root -p < database_migration.sql
 --
 -- Option 3: Windows Command Prompt
---   mysql -u root -pMysql < database_migration.sql
+--   mysql -u root -pMysql recipe_costing_db < database_migration.sql
 -- ============================================
 
 -- Use the database
@@ -38,20 +38,23 @@ CREATE TABLE products (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   
-  -- Vendor 1 Information
+  -- Vendor 1 Information (REQUIRED)
   vendor1_name VARCHAR(255),
   vendor1_price DECIMAL(10, 2),
-  vendor1_package_size VARCHAR(10) DEFAULT 'g',
+  vendor1_weight DECIMAL(10, 2),
+  vendor1_package_size VARCHAR(10) DEFAULT 'kg',
   
-  -- Vendor 2 Information
-  vendor2_name VARCHAR(255),
-  vendor2_price DECIMAL(10, 2),
-  vendor2_package_size VARCHAR(10) DEFAULT 'g',
+  -- Vendor 2 Information (OPTIONAL)
+  vendor2_name VARCHAR(255) NULL,
+  vendor2_price DECIMAL(10, 2) NULL,
+  vendor2_weight DECIMAL(10, 2) NULL,
+  vendor2_package_size VARCHAR(10) DEFAULT 'kg',
   
-  -- Vendor 3 Information
-  vendor3_name VARCHAR(255),
-  vendor3_price DECIMAL(10, 2),
-  vendor3_package_size VARCHAR(10) DEFAULT 'g',
+  -- Vendor 3 Information (OPTIONAL)
+  vendor3_name VARCHAR(255) NULL,
+  vendor3_price DECIMAL(10, 2) NULL,
+  vendor3_weight DECIMAL(10, 2) NULL,
+  vendor3_package_size VARCHAR(10) DEFAULT 'kg',
   
   -- Default vendor selection (0 = Vendor 1, 1 = Vendor 2, 2 = Vendor 3)
   default_vendor_index INT DEFAULT 0,
@@ -105,13 +108,16 @@ CREATE TABLE recipe_ingredients (
 -- INSERT SAMPLE DATA (Optional - Comment out if not needed)
 -- ============================================
 
--- Sample Products
-INSERT INTO products (name, description, vendor1_name, vendor1_price, vendor1_package_size, vendor2_name, vendor2_price, vendor2_package_size, vendor3_name, vendor3_price, vendor3_package_size, default_vendor_index) VALUES
-('Toor Dal', 'Yellow split pigeon peas', 'ABC Suppliers', 120.00, 'kg', 'XYZ Traders', 115.00, 'kg', 'PQR Wholesale', 118.00, 'kg', 1),
-('Basmati Rice', 'Premium long grain rice', 'ABC Suppliers', 80.00, 'kg', 'XYZ Traders', 85.00, 'kg', 'PQR Wholesale', 82.00, 'kg', 0),
-('Ghee', 'Pure clarified butter', 'ABC Suppliers', 500.00, 'kg', 'XYZ Traders', 480.00, 'kg', 'PQR Wholesale', 490.00, 'kg', 1),
-('Besan', 'Gram flour', 'ABC Suppliers', 60.00, 'kg', 'XYZ Traders', 58.00, 'kg', 'PQR Wholesale', 62.00, 'kg', 1),
-('Curd', 'Fresh yogurt', 'ABC Suppliers', 50.00, 'kg', 'XYZ Traders', 48.00, 'kg', 'PQR Wholesale', 52.00, 'kg', 1);
+-- Sample Products with weight fields
+INSERT INTO products (name, description, vendor1_name, vendor1_price, vendor1_weight, vendor1_package_size, vendor2_name, vendor2_price, vendor2_weight, vendor2_package_size, vendor3_name, vendor3_price, vendor3_weight, vendor3_package_size, default_vendor_index) VALUES
+('Toor Dal', 'Yellow split pigeon peas', 'ABC Suppliers', 120.00, 1, 'kg', 'XYZ Traders', 115.00, 1, 'kg', 'PQR Wholesale', 118.00, 1, 'kg', 1),
+('Basmati Rice', 'Premium long grain rice', 'ABC Suppliers', 80.00, 1, 'kg', 'XYZ Traders', 85.00, 1, 'kg', 'PQR Wholesale', 82.00, 1, 'kg', 0),
+('Ghee', 'Pure clarified butter', 'ABC Suppliers', 500.00, 1, 'kg', 'XYZ Traders', 480.00, 1, 'kg', 'PQR Wholesale', 490.00, 1, 'kg', 1),
+('Besan', 'Gram flour', 'ABC Suppliers', 60.00, 1, 'kg', 'XYZ Traders', 58.00, 1, 'kg', 'PQR Wholesale', 62.00, 1, 'kg', 1),
+('Curd', 'Fresh yogurt', 'ABC Suppliers', 50.00, 1, 'kg', 'XYZ Traders', 48.00, 1, 'kg', 'PQR Wholesale', 52.00, 1, 'kg', 1),
+('All-Purpose Flour', 'High-quality all-purpose flour for baking', 'Sysco', 15.99, 5, 'kg', 'Gordon Food Service', 14.50, 5, 'kg', NULL, NULL, NULL, NULL, 1),
+('Granulated Sugar', 'Pure white granulated sugar', 'Sysco', 12.99, 2, 'kg', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+('Butter (Unsalted)', 'Premium unsalted butter', 'Sysco', 8.99, 454, 'g', 'Gordon Food Service', 8.50, 454, 'g', NULL, NULL, NULL, NULL, 1);
 
 -- Sample Recipes
 INSERT INTO recipes (name, description) VALUES
@@ -150,4 +156,6 @@ INSERT INTO recipe_ingredients (recipe_id, product_id, quantity, unit) VALUES
 -- MIGRATION COMPLETE
 -- ============================================
 -- Tables have been successfully recreated with the latest schema
+-- Weight fields added for all vendors
+-- Vendors 2 and 3 are now optional (can be NULL)
 -- Sample data has been inserted (if not commented out)

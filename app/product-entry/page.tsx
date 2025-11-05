@@ -14,30 +14,49 @@ import {
   MenuItem,
   Alert,
   Snackbar,
+  Paper,
+  Divider,
+  IconButton,
+  Stepper,
+  Step,
+  StepLabel,
+  Chip,
+  InputAdornment,
 } from '@mui/material';
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  CheckCircle as CheckCircleIcon,
+} from '@mui/icons-material';
 import DashboardLayout from '../components/DashboardLayout';
 
+interface VendorData {
+  name: string;
+  price: string;
+  weight: string;
+  package_size: string;
+}
+
 export default function ProductEntry() {
+  const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    vendor1_name: '',
-    vendor1_price: '',
-    vendor1_package_size: 'g',
-    vendor2_name: '',
-    vendor2_price: '',
-    vendor2_package_size: 'g',
-    vendor3_name: '',
-    vendor3_price: '',
-    vendor3_package_size: 'g',
     default_vendor_index: 0,
   });
+
+  // Only Vendor 1 is required, others are optional
+  const [vendors, setVendors] = useState<VendorData[]>([
+    { name: '', price: '', weight: '', package_size: 'kg' },
+  ]);
 
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success' as 'success' | 'error',
   });
+
+  const steps = ['Product Information', 'Vendor Details', 'Review'];
 
   const packageSizeOptions = [
     { value: 'g', label: 'Grams (g)' },
@@ -57,16 +76,70 @@ export default function ProductEntry() {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleVendorChange = (index: number, field: keyof VendorData, value: string) => {
+    const updatedVendors = [...vendors];
+    updatedVendors[index] = {
+      ...updatedVendors[index],
+      [field]: value,
+    };
+    setVendors(updatedVendors);
+  };
+
+  const addVendor = () => {
+    if (vendors.length < 3) {
+      setVendors([...vendors, { name: '', price: '', weight: '', package_size: 'kg' }]);
+    }
+  };
+
+  const removeVendor = (index: number) => {
+    if (vendors.length > 1) {
+      const updatedVendors = vendors.filter((_, i) => i !== index);
+      setVendors(updatedVendors);
+      // Adjust default vendor index if needed
+      if (formData.default_vendor_index >= updatedVendors.length) {
+        setFormData(prev => ({ ...prev, default_vendor_index: 0 }));
+      }
+    }
+  };
+
+  const handleNext = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  const handleSubmit = async () => {
     try {
+      // Prepare data for API
+      const productData: any = {
+        name: formData.name,
+        description: formData.description,
+        default_vendor_index: formData.default_vendor_index,
+      };
+
+      // Add vendor data (fill empty slots with null)
+      for (let i = 0; i < 3; i++) {
+        if (i < vendors.length && vendors[i].name) {
+          productData[`vendor${i + 1}_name`] = vendors[i].name;
+          productData[`vendor${i + 1}_price`] = parseFloat(vendors[i].price) || 0;
+          productData[`vendor${i + 1}_weight`] = parseFloat(vendors[i].weight) || 0;
+          productData[`vendor${i + 1}_package_size`] = vendors[i].package_size;
+        } else {
+          productData[`vendor${i + 1}_name`] = null;
+          productData[`vendor${i + 1}_price`] = null;
+          productData[`vendor${i + 1}_weight`] = null;
+          productData[`vendor${i + 1}_package_size`] = null;
+        }
+      }
+
       const response = await fetch('http://localhost:3001/api/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(productData),
       });
 
       const result = await response.json();
@@ -82,269 +155,315 @@ export default function ProductEntry() {
         setFormData({
           name: '',
           description: '',
-          vendor1_name: '',
-          vendor1_price: '',
-          vendor1_package_size: 'g',
-          vendor2_name: '',
-          vendor2_price: '',
-          vendor2_package_size: 'g',
-          vendor3_name: '',
-          vendor3_price: '',
-          vendor3_package_size: 'g',
           default_vendor_index: 0,
         });
+        setVendors([{ name: '', price: '', weight: '', package_size: 'kg' }]);
+        setActiveStep(0);
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
       setSnackbar({
         open: true,
-        message: `Error: ${error instanceof Error ? error.message : 'Failed to add product'}`,
+        message: 'Error adding product',
         severity: 'error',
       });
     }
   };
 
+  const isStepValid = (step: number) => {
+    switch (step) {
+      case 0:
+        return formData.name.trim() !== '' && formData.description.trim() !== '';
+      case 1:
+        return vendors[0].name.trim() !== '' && 
+               vendors[0].price.trim() !== '' && 
+               vendors[0].weight.trim() !== '';
+      case 2:
+        return true;
+      default:
+        return false;
+    }
+  };
+
   return (
     <DashboardLayout>
-      <Box>
-        <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-          Product Entry
+      <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+        <Typography variant="h4" gutterBottom sx={{ mb: 4, fontWeight: 'bold' }}>
+          Add New Product
         </Typography>
 
-        <Card>
-          <CardContent>
-            <form onSubmit={handleSubmit}>
-              <Grid container spacing={3}>
-                {/* Product Information */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-                    Product Information
-                  </Typography>
-                </Grid>
+        {/* Stepper */}
+        <Paper sx={{ p: 3, mb: 4 }}>
+          <Stepper activeStep={activeStep} alternativeLabel>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        </Paper>
 
-                <Grid item xs={12} md={6}>
+        {/* Step Content */}
+        <Paper sx={{ p: 4 }}>
+          {activeStep === 0 && (
+            <Box>
+              <Typography variant="h6" gutterBottom sx={{ mb: 3, color: 'primary.main' }}>
+                Product Information
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    required
                     label="Product Name"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="e.g., Toor Dal, Rice, Ghee"
+                    required
+                    variant="outlined"
                   />
                 </Grid>
-
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Description"
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    placeholder="Optional product description"
+                    required
                     multiline
-                    rows={1}
+                    rows={4}
+                    variant="outlined"
                   />
-                </Grid>
-
-                {/* Vendor 1 */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom sx={{ color: '#1976d2', mt: 2, fontWeight: 'bold' }}>
-                    Vendor 1
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Vendor Name"
-                    name="vendor1_name"
-                    value={formData.vendor1_name}
-                    onChange={handleChange}
-                    placeholder="e.g., ABC Suppliers"
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Price"
-                    name="vendor1_price"
-                    type="number"
-                    inputProps={{ step: '0.01', min: '0' }}
-                    value={formData.vendor1_price}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Package Size</InputLabel>
-                    <Select
-                      name="vendor1_package_size"
-                      value={formData.vendor1_package_size}
-                      label="Package Size"
-                      onChange={handleChange}
-                    >
-                      {packageSizeOptions.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                {/* Vendor 2 */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom sx={{ color: '#1976d2', mt: 2, fontWeight: 'bold' }}>
-                    Vendor 2
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Vendor Name"
-                    name="vendor2_name"
-                    value={formData.vendor2_name}
-                    onChange={handleChange}
-                    placeholder="e.g., XYZ Traders"
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Price"
-                    name="vendor2_price"
-                    type="number"
-                    inputProps={{ step: '0.01', min: '0' }}
-                    value={formData.vendor2_price}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Package Size</InputLabel>
-                    <Select
-                      name="vendor2_package_size"
-                      value={formData.vendor2_package_size}
-                      label="Package Size"
-                      onChange={handleChange}
-                    >
-                      {packageSizeOptions.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                {/* Vendor 3 */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom sx={{ color: '#1976d2', mt: 2, fontWeight: 'bold' }}>
-                    Vendor 3
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Vendor Name"
-                    name="vendor3_name"
-                    value={formData.vendor3_name}
-                    onChange={handleChange}
-                    placeholder="e.g., PQR Wholesale"
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Price"
-                    name="vendor3_price"
-                    type="number"
-                    inputProps={{ step: '0.01', min: '0' }}
-                    value={formData.vendor3_price}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel>Package Size</InputLabel>
-                    <Select
-                      name="vendor3_package_size"
-                      value={formData.vendor3_package_size}
-                      label="Package Size"
-                      onChange={handleChange}
-                    >
-                      {packageSizeOptions.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                {/* Default Vendor Selection */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom sx={{ color: '#1976d2', mt: 2, fontWeight: 'bold' }}>
-                    Default Price Selection
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <FormControl fullWidth required>
-                    <InputLabel>Select Default Vendor</InputLabel>
-                    <Select
-                      name="default_vendor_index"
-                      value={formData.default_vendor_index}
-                      label="Select Default Vendor"
-                      onChange={handleChange}
-                    >
-                      <MenuItem value={0}>
-                        Vendor 1 {formData.vendor1_name && `(${formData.vendor1_name})`}
-                      </MenuItem>
-                      <MenuItem value={1}>
-                        Vendor 2 {formData.vendor2_name && `(${formData.vendor2_name})`}
-                      </MenuItem>
-                      <MenuItem value={2}>
-                        Vendor 3 {formData.vendor3_name && `(${formData.vendor3_name})`}
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                {/* Submit Button */}
-                <Grid item xs={12}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    size="large"
-                    fullWidth
-                    sx={{ mt: 2, py: 1.5 }}
-                  >
-                    Add Product
-                  </Button>
                 </Grid>
               </Grid>
-            </form>
-          </CardContent>
-        </Card>
+            </Box>
+          )}
+
+          {activeStep === 1 && (
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" sx={{ color: 'primary.main' }}>
+                  Vendor Details
+                </Typography>
+                {vendors.length < 3 && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={addVendor}
+                    size="small"
+                  >
+                    Add Vendor
+                  </Button>
+                )}
+              </Box>
+
+              {vendors.map((vendor, index) => (
+                <Card key={index} sx={{ mb: 3, border: '1px solid', borderColor: 'divider' }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6">
+                          Vendor {index + 1}
+                        </Typography>
+                        {index === 0 && (
+                          <Chip label="Required" color="primary" size="small" />
+                        )}
+                        {index === formData.default_vendor_index && (
+                          <Chip label="Default" color="success" size="small" icon={<CheckCircleIcon />} />
+                        )}
+                      </Box>
+                      {index > 0 && (
+                        <IconButton
+                          color="error"
+                          onClick={() => removeVendor(index)}
+                          size="small"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      )}
+                    </Box>
+
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Vendor Name"
+                          value={vendor.name}
+                          onChange={(e) => handleVendorChange(index, 'name', e.target.value)}
+                          required={index === 0}
+                          variant="outlined"
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Price"
+                          type="number"
+                          value={vendor.price}
+                          onChange={(e) => handleVendorChange(index, 'price', e.target.value)}
+                          required={index === 0}
+                          variant="outlined"
+                          InputProps={{
+                            startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                          }}
+                          inputProps={{ step: '0.01', min: '0' }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Weight/Quantity"
+                          type="number"
+                          value={vendor.weight}
+                          onChange={(e) => handleVendorChange(index, 'weight', e.target.value)}
+                          required={index === 0}
+                          variant="outlined"
+                          inputProps={{ step: '0.01', min: '0' }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <FormControl fullWidth variant="outlined">
+                          <InputLabel>Package Size</InputLabel>
+                          <Select
+                            value={vendor.package_size}
+                            onChange={(e) => handleVendorChange(index, 'package_size', e.target.value as string)}
+                            label="Package Size"
+                          >
+                            {packageSizeOptions.map((option) => (
+                              <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    </Grid>
+
+                    {vendor.name && (
+                      <Box sx={{ mt: 2 }}>
+                        <Button
+                          variant={formData.default_vendor_index === index ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => setFormData(prev => ({ ...prev, default_vendor_index: index }))}
+                        >
+                          {formData.default_vendor_index === index ? 'Default Vendor' : 'Set as Default'}
+                        </Button>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          )}
+
+          {activeStep === 2 && (
+            <Box>
+              <Typography variant="h6" gutterBottom sx={{ mb: 3, color: 'primary.main' }}>
+                Review Your Product
+              </Typography>
+
+              <Card sx={{ mb: 3 }}>
+                <CardContent>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    Product Information
+                  </Typography>
+                  <Divider sx={{ my: 2 }} />
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="body2" color="text.secondary">Product Name</Typography>
+                      <Typography variant="body1" fontWeight="medium">{formData.name}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={8}>
+                      <Typography variant="body2" color="text.secondary">Description</Typography>
+                      <Typography variant="body1">{formData.description}</Typography>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    Vendor Details
+                  </Typography>
+                  <Divider sx={{ my: 2 }} />
+                  {vendors.map((vendor, index) => (
+                    vendor.name && (
+                      <Box key={index} sx={{ mb: 3, pb: 3, borderBottom: index < vendors.length - 1 ? '1px solid' : 'none', borderColor: 'divider' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            Vendor {index + 1}
+                          </Typography>
+                          {index === formData.default_vendor_index && (
+                            <Chip label="Default" color="success" size="small" />
+                          )}
+                        </Box>
+                        <Grid container spacing={2}>
+                          <Grid item xs={6} sm={3}>
+                            <Typography variant="body2" color="text.secondary">Name</Typography>
+                            <Typography variant="body1">{vendor.name}</Typography>
+                          </Grid>
+                          <Grid item xs={6} sm={3}>
+                            <Typography variant="body2" color="text.secondary">Price</Typography>
+                            <Typography variant="body1">${vendor.price}</Typography>
+                          </Grid>
+                          <Grid item xs={6} sm={3}>
+                            <Typography variant="body2" color="text.secondary">Weight</Typography>
+                            <Typography variant="body1">{vendor.weight}</Typography>
+                          </Grid>
+                          <Grid item xs={6} sm={3}>
+                            <Typography variant="body2" color="text.secondary">Package Size</Typography>
+                            <Typography variant="body1">
+                              {packageSizeOptions.find(opt => opt.value === vendor.package_size)?.label}
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    )
+                  ))}
+                </CardContent>
+              </Card>
+            </Box>
+          )}
+
+          {/* Navigation Buttons */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+            <Button
+              disabled={activeStep === 0}
+              onClick={handleBack}
+              variant="outlined"
+            >
+              Back
+            </Button>
+            <Box>
+              {activeStep === steps.length - 1 ? (
+                <Button
+                  variant="contained"
+                  onClick={handleSubmit}
+                  size="large"
+                >
+                  Add Product
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  onClick={handleNext}
+                  disabled={!isStepValid(activeStep)}
+                  size="large"
+                >
+                  Next
+                </Button>
+              )}
+            </Box>
+          </Box>
+        </Paper>
 
         <Snackbar
           open={snackbar.open}
           autoHideDuration={6000}
           onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >
           <Alert
             onClose={() => setSnackbar({ ...snackbar, open: false })}
