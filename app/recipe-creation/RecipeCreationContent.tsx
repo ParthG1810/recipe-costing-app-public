@@ -566,7 +566,7 @@ export default function RecipeCreationContent() {
         )}
 
         {/* Stepper */}
-        <Card sx={{ mb: 3 }}>
+        <Card sx={{ mb: 2 }}>
           <CardContent>
             <Stepper activeStep={activeStep}>
               {steps.map((label) => (
@@ -578,11 +578,8 @@ export default function RecipeCreationContent() {
           </CardContent>
         </Card>
 
-        {/* Step Content */}
-        {renderStepContent(activeStep)}
-
-        {/* Navigation Buttons */}
-        <Card sx={{ mt: 3 }}>
+        {/* Navigation Buttons - Moved to top */}
+        <Card sx={{ mb: 2 }}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Button
@@ -614,6 +611,11 @@ export default function RecipeCreationContent() {
             </Box>
           </CardContent>
         </Card>
+
+        {/* Step Content - Scrollable */}
+        <Box sx={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto', pr: 1 }}>
+          {renderStepContent(activeStep)}
+        </Box>
 
         {/* Snackbar */}
         <Snackbar

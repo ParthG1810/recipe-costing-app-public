@@ -512,7 +512,7 @@ export default function ProductEntryContent() {
         )}
 
         {/* Stepper */}
-        <Card sx={{ mb: 3 }}>
+        <Card sx={{ mb: 2 }}>
           <CardContent>
             <Stepper activeStep={activeStep}>
               {steps.map((label) => (
@@ -524,11 +524,8 @@ export default function ProductEntryContent() {
           </CardContent>
         </Card>
 
-        {/* Step Content */}
-        {getStepContent(activeStep)}
-
-        {/* Navigation Buttons */}
-        <Card sx={{ mt: 3 }}>
+        {/* Navigation Buttons - Moved to top */}
+        <Card sx={{ mb: 2 }}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Button
@@ -561,6 +558,11 @@ export default function ProductEntryContent() {
             </Box>
           </CardContent>
         </Card>
+
+        {/* Step Content - Scrollable */}
+        <Box sx={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto', pr: 1 }}>
+          {getStepContent(activeStep)}
+        </Box>
 
         <Snackbar
           open={snackbar.open}
