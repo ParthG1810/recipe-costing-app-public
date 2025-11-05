@@ -206,9 +206,10 @@ export default function ProductManagement() {
     }
   };
 
-  const getDefaultPrice = (product: Product) => {
+  const getDefaultPrice = (product: Product): number => {
     const prices = [product.vendor1_price, product.vendor2_price, product.vendor3_price];
-    return prices[product.default_vendor_index] || 0;
+    const price = prices[product.default_vendor_index];
+    return typeof price === 'number' ? price : 0;
   };
 
   const getDefaultVendor = (product: Product) => {
