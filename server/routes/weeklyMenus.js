@@ -10,7 +10,9 @@ const {
   successResponse, 
   errorResponse, 
   getPagination, 
-  buildPaginationResponse 
+  buildPaginationResponse,
+  dayNameToNumber,
+  dayNumberToName
 } = require('../utils');
 
 /**
@@ -132,13 +134,15 @@ router.get('/:id', async (req, res) => {
       [id]
     );
 
-    // Group by day
+    // Group by day (convert day numbers to names)
     const itemsByDay = {};
     items.forEach(item => {
-      if (!itemsByDay[item.day_of_week]) {
-        itemsByDay[item.day_of_week] = [];
+      const dayName = dayNumberToName(item.day_of_week);
+      if (!itemsByDay[dayName]) {
+        itemsByDay[dayName] = [];
       }
-      itemsByDay[item.day_of_week].push(item);
+      item.day_of_week_name = dayName; // Add day name for convenience
+      itemsByDay[dayName].push(item);
     });
 
     menu.items = items;
@@ -187,13 +191,15 @@ router.get('/week/:date', async (req, res) => {
       [menu.id]
     );
 
-    // Group by day
+    // Group by day (convert day numbers to names)
     const itemsByDay = {};
     items.forEach(item => {
-      if (!itemsByDay[item.day_of_week]) {
-        itemsByDay[item.day_of_week] = [];
+      const dayName = dayNumberToName(item.day_of_week);
+      if (!itemsByDay[dayName]) {
+        itemsByDay[dayName] = [];
       }
-      itemsByDay[item.day_of_week].push(item);
+      item.day_of_week_name = dayName; // Add day name for convenience
+      itemsByDay[dayName].push(item);
     });
 
     menu.items = items;
@@ -320,13 +326,13 @@ router.post('/:id/items', async (req, res) => {
       }
     }
 
-    // Insert items
+    // Insert items (convert day names to numbers)
     const insertPromises = items.map((item, index) => {
       return pool.query(
         `INSERT INTO weekly_menu_items 
          (weekly_menu_id, day_of_week, recipe_id, category, display_order, cost) 
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [id, item.dayOfWeek, item.recipeId, item.category, item.displayOrder || index, item.cost || null]
+        [id, dayNameToNumber(item.dayOfWeek), item.recipeId, item.category, item.displayOrder || index, item.cost || null]
       );
     });
 

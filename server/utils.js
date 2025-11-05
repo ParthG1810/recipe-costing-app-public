@@ -168,6 +168,42 @@ async function executeCanvaMCP(toolName, params) {
   }
 }
 
+/**
+ * Convert day name to day number (1-6)
+ * 
+ * @param {string} dayName - Day name (Monday, Tuesday, etc.)
+ * @returns {number} Day number (1=Monday, 6=Saturday)
+ */
+function dayNameToNumber(dayName) {
+  const dayMap = {
+    'Monday': 1,
+    'Tuesday': 2,
+    'Wednesday': 3,
+    'Thursday': 4,
+    'Friday': 5,
+    'Saturday': 6,
+  };
+  return dayMap[dayName] || 1;
+}
+
+/**
+ * Convert day number to day name
+ * 
+ * @param {number} dayNumber - Day number (1-6)
+ * @returns {string} Day name
+ */
+function dayNumberToName(dayNumber) {
+  const dayMap = {
+    1: 'Monday',
+    2: 'Tuesday',
+    3: 'Wednesday',
+    4: 'Thursday',
+    5: 'Friday',
+    6: 'Saturday',
+  };
+  return dayMap[dayNumber] || 'Monday';
+}
+
 module.exports = {
   generateToken,
   getPagination,
@@ -177,5 +213,7 @@ module.exports = {
   validateRequiredFields,
   getMonday,
   formatDate,
-  executeCanvaMCP
+  executeCanvaMCP,
+  dayNameToNumber,
+  dayNumberToName
 };
