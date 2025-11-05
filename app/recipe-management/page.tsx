@@ -25,14 +25,11 @@ import {
   InputAdornment,
   TablePagination,
   Tooltip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Collapse,
   Grid,
   CardContent,
   Divider,
+  TableSortLabel,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -75,6 +72,9 @@ interface Recipe {
   ingredients?: RecipeIngredient[];
 }
 
+type OrderDirection = 'asc' | 'desc';
+type OrderBy = 'id' | 'name' | 'created_at';
+
 export default function RecipeManagement() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
@@ -82,7 +82,8 @@ export default function RecipeManagement() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
+  const [orderBy, setOrderBy] = useState<OrderBy>('created_at');
+  const [order, setOrder] = useState<OrderDirection>('desc');
 
   const [viewDialog, setViewDialog] = useState({
     open: false,
@@ -105,26 +106,8 @@ export default function RecipeManagement() {
   }, []);
 
   useEffect(() => {
-    let filtered = recipes.filter((recipe) =>
-      recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      recipe.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    // Apply sorting
-    const sorted = [...filtered].sort((a, b) => {
-      if (sortBy === 'newest') {
-        return b.id - a.id;
-      } else if (sortBy === 'oldest') {
-        return a.id - b.id;
-      } else if (sortBy === 'name') {
-        return a.name.localeCompare(b.name);
-      }
-      return 0;
-    });
-
-    setFilteredRecipes(sorted);
-    setPage(0);
-  }, [searchQuery, recipes, sortBy]);
+    filterAndSortRecipes();
+  }, [recipes, searchQuery, orderBy, order]);
 
   const fetchRecipes = async () => {
     try {
@@ -132,44 +115,62 @@ export default function RecipeManagement() {
       const result = await response.json();
       if (result.success) {
         setRecipes(result.data);
-        setFilteredRecipes(result.data);
       }
     } catch (error) {
       console.error('Error fetching recipes:', error);
     }
   };
 
-  const fetchRecipeDetails = async (recipeId: number) => {
+  const filterAndSortRecipes = () => {
+    let filtered = recipes.filter(
+      (recipe) =>
+        recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        recipe.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Sort recipes
+    filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      if (orderBy === 'id') {
+        aValue = a.id;
+        bValue = b.id;
+      } else if (orderBy === 'name') {
+        aValue = a.name.toLowerCase();
+        bValue = b.name.toLowerCase();
+      } else if (orderBy === 'created_at') {
+        aValue = new Date(a.created_at).getTime();
+        bValue = new Date(b.created_at).getTime();
+      }
+
+      if (order === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    setFilteredRecipes(filtered);
+  };
+
+  const handleRequestSort = (property: OrderBy) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
+  const handleViewRecipe = async (recipeId: number) => {
     try {
       const response = await fetch(`http://localhost:3001/api/recipes/${recipeId}`);
       const recipe = await response.json();
       setViewDialog({ open: true, recipe });
     } catch (error) {
-      setSnackbar({
-        open: true,
-        message: 'Error loading recipe details',
-        severity: 'error',
-      });
+      console.error('Error fetching recipe details:', error);
     }
   };
 
-  const handleViewOpen = (recipe: Recipe) => {
-    fetchRecipeDetails(recipe.id);
-  };
-
-  const handleViewClose = () => {
-    setViewDialog({ open: false, recipe: null });
-  };
-
-  const handleDeleteOpen = (recipeId: number) => {
-    setDeleteDialog({ open: true, recipeId });
-  };
-
-  const handleDeleteClose = () => {
-    setDeleteDialog({ open: false, recipeId: null });
-  };
-
-  const handleDeleteConfirm = async () => {
+  const handleDeleteRecipe = async () => {
     if (!deleteDialog.recipeId) return;
 
     try {
@@ -178,13 +179,16 @@ export default function RecipeManagement() {
       });
 
       const result = await response.json();
+
       if (result.success) {
         setSnackbar({
           open: true,
-          message: 'Recipe deleted successfully',
+          message: 'Recipe deleted successfully!',
           severity: 'success',
         });
         fetchRecipes();
+      } else {
+        throw new Error(result.error);
       }
     } catch (error) {
       setSnackbar({
@@ -206,16 +210,10 @@ export default function RecipeManagement() {
       const defaultVendor = ingredient.vendors.find((v) => v.is_default) || ingredient.vendors[0];
       if (!defaultVendor) return total;
 
-      // Convert ingredient quantity to grams
       const quantityInGrams = convertToGrams(ingredient.quantity, ingredient.unit);
-
-      // Convert vendor weight to grams
       const vendorWeightInGrams = convertToGrams(defaultVendor.weight, defaultVendor.package_size);
-
-      // Calculate price per gram
       const pricePerGram = defaultVendor.price / vendorWeightInGrams;
 
-      // Calculate ingredient cost
       return total + (pricePerGram * quantityInGrams);
     }, 0);
   };
@@ -253,18 +251,6 @@ export default function RecipeManagement() {
               Recipes
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-              <FormControl size="small" sx={{ minWidth: 150 }}>
-                <InputLabel>Sort By</InputLabel>
-                <Select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'name')}
-                  label="Sort By"
-                >
-                  <MenuItem value="newest">Newest First</MenuItem>
-                  <MenuItem value="oldest">Oldest First</MenuItem>
-                  <MenuItem value="name">Name (A-Z)</MenuItem>
-                </Select>
-              </FormControl>
               <TextField
                 size="small"
                 placeholder="Search recipes..."
@@ -295,8 +281,24 @@ export default function RecipeManagement() {
             <TableHead>
               <TableRow>
                 <TableCell width={50} />
-                <TableCell>ID</TableCell>
-                <TableCell>Recipe Name</TableCell>
+                <TableCell sortDirection={orderBy === 'id' ? order : false}>
+                  <TableSortLabel
+                    active={orderBy === 'id'}
+                    direction={orderBy === 'id' ? order : 'asc'}
+                    onClick={() => handleRequestSort('id')}
+                  >
+                    ID
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sortDirection={orderBy === 'name' ? order : false}>
+                  <TableSortLabel
+                    active={orderBy === 'name'}
+                    direction={orderBy === 'name' ? order : 'asc'}
+                    onClick={() => handleRequestSort('name')}
+                  >
+                    Recipe Name
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell>Description</TableCell>
                 <TableCell>Ingredients</TableCell>
                 <TableCell align="right">Actions</TableCell>
@@ -307,10 +309,7 @@ export default function RecipeManagement() {
                 <React.Fragment key={recipe.id}>
                   <TableRow hover>
                     <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={() => toggleRow(recipe.id)}
-                      >
+                      <IconButton size="small" onClick={() => toggleRow(recipe.id)}>
                         {expandedRows.has(recipe.id) ? (
                           <KeyboardArrowUpIcon />
                         ) : (
@@ -331,7 +330,9 @@ export default function RecipeManagement() {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={`${recipe.ingredients?.length || 0} ingredient${recipe.ingredients?.length !== 1 ? 's' : ''}`}
+                        label={`${recipe.ingredients?.length || 0} ingredient${
+                          (recipe.ingredients?.length || 0) !== 1 ? 's' : ''
+                        }`}
                         size="small"
                         color="primary"
                         variant="outlined"
@@ -341,8 +342,8 @@ export default function RecipeManagement() {
                       <Tooltip title="View Details">
                         <IconButton
                           size="small"
-                          onClick={() => handleViewOpen(recipe)}
-                          color="primary"
+                          color="info"
+                          onClick={() => handleViewRecipe(recipe.id)}
                         >
                           <VisibilityIcon />
                         </IconButton>
@@ -350,8 +351,8 @@ export default function RecipeManagement() {
                       <Tooltip title="Edit">
                         <IconButton
                           size="small"
-                          href={`/recipe-creation?id=${recipe.id}`}
                           color="primary"
+                          href={`/recipe-creation?id=${recipe.id}`}
                         >
                           <EditIcon />
                         </IconButton>
@@ -359,19 +360,21 @@ export default function RecipeManagement() {
                       <Tooltip title="Delete">
                         <IconButton
                           size="small"
-                          onClick={() => handleDeleteOpen(recipe.id)}
                           color="error"
+                          onClick={() => setDeleteDialog({ open: true, recipeId: recipe.id })}
                         >
                           <DeleteIcon />
                         </IconButton>
                       </Tooltip>
                     </TableCell>
                   </TableRow>
+
+                  {/* Expandable Row */}
                   <TableRow>
                     <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
                       <Collapse in={expandedRows.has(recipe.id)} timeout="auto" unmountOnExit>
                         <Box sx={{ margin: 2 }}>
-                          <Typography variant="h6" gutterBottom component="div" sx={{ mb: 2 }}>
+                          <Typography variant="h6" gutterBottom component="div">
                             Quick Preview
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
@@ -399,92 +402,91 @@ export default function RecipeManagement() {
         {/* View Recipe Dialog */}
         <Dialog
           open={viewDialog.open}
-          onClose={handleViewClose}
+          onClose={() => setViewDialog({ open: false, recipe: null })}
           maxWidth="md"
           fullWidth
         >
           <DialogTitle>
-            Recipe Details
-            <IconButton
-              onClick={handleViewClose}
-              sx={{ position: 'absolute', right: 8, top: 8 }}
-            >
-              <CloseIcon />
-            </IconButton>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              Recipe Details
+              <IconButton onClick={() => setViewDialog({ open: false, recipe: null })}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
           </DialogTitle>
           <DialogContent dividers>
             {viewDialog.recipe && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {/* Recipe Information */}
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {viewDialog.recipe.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {viewDialog.recipe.description || 'No description'}
-                    </Typography>
-                  </CardContent>
-                </Card>
+              <Box>
+                <Typography variant="h5" gutterBottom>
+                  {viewDialog.recipe.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  {viewDialog.recipe.description || 'No description'}
+                </Typography>
 
-                {/* Ingredients */}
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Ingredients ({viewDialog.recipe.ingredients?.length || 0})
-                  </Typography>
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Product</TableCell>
-                          <TableCell>Quantity</TableCell>
-                          <TableCell>Unit</TableCell>
-                          <TableCell>Vendor</TableCell>
-                          <TableCell align="right">Cost</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {viewDialog.recipe.ingredients?.map((ingredient, index) => {
-                          const defaultVendor = ingredient.vendors?.find((v) => v.is_default) || ingredient.vendors?.[0];
-                          const quantityInGrams = convertToGrams(ingredient.quantity, ingredient.unit);
-                          const vendorWeightInGrams = defaultVendor ? convertToGrams(defaultVendor.weight, defaultVendor.package_size) : 0;
-                          const cost = defaultVendor ? (defaultVendor.price / vendorWeightInGrams) * quantityInGrams : 0;
+                <Divider sx={{ my: 2 }} />
 
-                          return (
-                            <TableRow key={index}>
-                              <TableCell>{ingredient.product_name}</TableCell>
-                              <TableCell>{ingredient.quantity}</TableCell>
-                              <TableCell>{ingredient.unit}</TableCell>
-                              <TableCell>{defaultVendor?.vendor_name || 'N/A'}</TableCell>
-                              <TableCell align="right">${cost.toFixed(2)}</TableCell>
-                            </TableRow>
-                          );
-                        })}
-                        <TableRow>
-                          <TableCell colSpan={4}>
-                            <Typography variant="subtitle1" fontWeight={600}>
-                              Total Cost
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="right">
-                            <Typography variant="subtitle1" fontWeight={600} color="primary">
-                              ${calculateRecipeCost(viewDialog.recipe).toFixed(2)}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Box>
+                <Typography variant="h6" gutterBottom>
+                  Ingredients ({viewDialog.recipe.ingredients?.length || 0})
+                </Typography>
+
+                <TableContainer component={Paper} variant="outlined" sx={{ mt: 2 }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Product</TableCell>
+                        <TableCell>Quantity</TableCell>
+                        <TableCell>Unit</TableCell>
+                        <TableCell>Vendor</TableCell>
+                        <TableCell align="right">Cost</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {viewDialog.recipe.ingredients?.map((ingredient) => {
+                        const defaultVendor =
+                          ingredient.vendors?.find((v) => v.is_default) || ingredient.vendors?.[0];
+                        const quantityInGrams = convertToGrams(ingredient.quantity, ingredient.unit);
+                        const vendorWeightInGrams = defaultVendor
+                          ? convertToGrams(defaultVendor.weight, defaultVendor.package_size)
+                          : 0;
+                        const cost = defaultVendor
+                          ? (defaultVendor.price / vendorWeightInGrams) * quantityInGrams
+                          : 0;
+
+                        return (
+                          <TableRow key={ingredient.id}>
+                            <TableCell>{ingredient.product_name}</TableCell>
+                            <TableCell>{ingredient.quantity.toFixed(2)}</TableCell>
+                            <TableCell>{ingredient.unit}</TableCell>
+                            <TableCell>{defaultVendor?.vendor_name || 'N/A'}</TableCell>
+                            <TableCell align="right">${cost.toFixed(2)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      <TableRow>
+                        <TableCell colSpan={4}>
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            Total Cost
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="subtitle1" fontWeight={600} color="primary">
+                            ${calculateRecipeCost(viewDialog.recipe).toFixed(2)}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </Box>
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleViewClose}>Close</Button>
+            <Button onClick={() => setViewDialog({ open: false, recipe: null })}>Close</Button>
             <Button
               variant="contained"
-              href={`/recipe-creation?id=${viewDialog.recipe?.id}`}
               startIcon={<EditIcon />}
+              href={`/recipe-creation?id=${viewDialog.recipe?.id}`}
             >
               Edit Recipe
             </Button>
@@ -492,14 +494,19 @@ export default function RecipeManagement() {
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteDialog.open} onClose={handleDeleteClose}>
+        <Dialog
+          open={deleteDialog.open}
+          onClose={() => setDeleteDialog({ open: false, recipeId: null })}
+        >
           <DialogTitle>Confirm Delete</DialogTitle>
           <DialogContent>
-            Are you sure you want to delete this recipe? This action cannot be undone.
+            <Typography>
+              Are you sure you want to delete this recipe? This action cannot be undone.
+            </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleDeleteClose}>Cancel</Button>
-            <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+            <Button onClick={() => setDeleteDialog({ open: false, recipeId: null })}>Cancel</Button>
+            <Button onClick={handleDeleteRecipe} color="error" variant="contained">
               Delete
             </Button>
           </DialogActions>

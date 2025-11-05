@@ -8,6 +8,9 @@ import {
   TextField,
   Button,
   Grid,
+  Stepper,
+  Step,
+  StepLabel,
   Table,
   TableBody,
   TableCell,
@@ -16,10 +19,6 @@ import {
   TableRow,
   Paper,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Select,
   MenuItem,
   FormControl,
@@ -27,66 +26,55 @@ import {
   Snackbar,
   Alert,
   Chip,
+  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
+  ArrowBack as ArrowBackIcon,
+  ArrowForward as ArrowForwardIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 import DashboardLayout from '../components/DashboardLayout';
-import {
-  calculatePricePerGram,
-  calculateIngredientCost,
-  getDefaultPrice,
-  getDefaultWeight,
-  getDefaultPackageSize,
-} from '../utils/helpers';
+import { convertToGrams } from '../utils/helpers';
+
+interface Vendor {
+  id: number;
+  product_id: number;
+  vendor_name: string;
+  price: number;
+  weight: number;
+  package_size: string;
+  is_default: boolean;
+}
 
 interface Product {
   id: number;
   name: string;
-  vendor1_price: number;
-  vendor1_weight: number;
-  vendor1_package_size: string;
-  vendor2_price: number;
-  vendor2_weight: number;
-  vendor2_package_size: string;
-  vendor3_price: number;
-  vendor3_weight: number;
-  vendor3_package_size: string;
-  default_vendor_index: number;
+  description: string;
+  vendors: Vendor[];
 }
 
 interface RecipeIngredient {
   product_id: number;
-  quantity: number;
+  product_name: string;
+  quantity: string;
   unit: string;
+  cost: number;
 }
 
-interface Recipe {
-  id: number;
-  name: string;
-  description: string;
-}
+const steps = ['Recipe Information', 'Add Ingredients', 'Review & Save'];
 
 export default function RecipeCreation() {
+  const [activeStep, setActiveStep] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-  });
+  const [recipeName, setRecipeName] = useState('');
+  const [recipeDescription, setRecipeDescription] = useState('');
   const [ingredients, setIngredients] = useState<RecipeIngredient[]>([]);
-  const [newIngredient, setNewIngredient] = useState({
-    product_id: '',
-    quantity: '',
-    unit: 'grams',
-  });
-  const [viewDialog, setViewDialog] = useState<{ open: boolean; recipeId: number | null }>({
-    open: false,
-    recipeId: null,
-  });
-  const [recipeDetails, setRecipeDetails] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<number | ''>('');
+  const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState('g');
+
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -95,7 +83,6 @@ export default function RecipeCreation() {
 
   useEffect(() => {
     fetchProducts();
-    fetchRecipes();
   }, []);
 
   const fetchProducts = async () => {
@@ -110,98 +97,98 @@ export default function RecipeCreation() {
     }
   };
 
-  const fetchRecipes = async () => {
-    try {
-      const response = await fetch('http://localhost:3001/api/recipes');
-      const result = await response.json();
-      if (result.success) {
-        setRecipes(result.data);
-      }
-    } catch (error) {
-      console.error('Error fetching recipes:', error);
-    }
+  const getDefaultVendor = (product: Product): Vendor | null => {
+    return product.vendors.find((v) => v.is_default) || product.vendors[0] || null;
   };
 
-  const fetchRecipeDetails = async (recipeId: number) => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/recipes/${recipeId}`);
-      const result = await response.json();
-      if (result.success) {
-        setRecipeDetails(result.data);
-      }
-    } catch (error) {
-      console.error('Error fetching recipe details:', error);
-    }
+  const calculateIngredientCost = (product: Product, quantity: number, unit: string): number => {
+    const vendor = getDefaultVendor(product);
+    if (!vendor) return 0;
+
+    const quantityInGrams = convertToGrams(quantity, unit);
+    const vendorWeightInGrams = convertToGrams(vendor.weight, vendor.package_size);
+    const pricePerGram = vendor.price / vendorWeightInGrams;
+
+    return pricePerGram * quantityInGrams;
   };
 
-  const handleAddIngredient = () => {
-    if (newIngredient.product_id && newIngredient.quantity) {
-      setIngredients([
-        ...ingredients,
-        {
-          product_id: parseInt(newIngredient.product_id),
-          quantity: parseFloat(newIngredient.quantity),
-          unit: newIngredient.unit,
-        },
-      ]);
-      setNewIngredient({ product_id: '', quantity: '', unit: 'grams' });
-    }
-  };
-
-  const handleRemoveIngredient = (index: number) => {
-    setIngredients(ingredients.filter((_, i) => i !== index));
-  };
-
-  const getProductById = (id: number) => {
-    return products.find((p) => p.id === id);
-  };
-
-  const calculateIngredientCost = (ingredient: RecipeIngredient) => {
-    const product = getProductById(ingredient.product_id);
-    if (!product) return 0;
-
-    const prices = [product.vendor1_price, product.vendor2_price, product.vendor3_price];
-    const defaultPrice = prices[product.default_vendor_index] || 0;
-
-    // Convert quantity to match product unit
-    let adjustedQuantity = ingredient.quantity;
-    if (ingredient.unit === 'kg' && product.purchase_unit === 'grams') {
-      adjustedQuantity = ingredient.quantity * 1000;
-    } else if (ingredient.unit === 'grams' && product.purchase_unit === 'kg') {
-      adjustedQuantity = ingredient.quantity / 1000;
-    }
-
-    const costPerUnit = defaultPrice / product.purchase_quantity;
-    return costPerUnit * adjustedQuantity;
-  };
-
-  const calculateTotalCost = () => {
-    return ingredients.reduce((total, ingredient) => {
-      return total + calculateIngredientCost(ingredient);
-    }, 0);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (ingredients.length === 0) {
+  const addIngredient = () => {
+    if (!selectedProduct || !quantity) {
       setSnackbar({
         open: true,
-        message: 'Please add at least one ingredient',
+        message: 'Please select a product and enter quantity',
         severity: 'error',
       });
       return;
     }
 
+    const product = products.find((p) => p.id === selectedProduct);
+    if (!product) return;
+
+    const cost = calculateIngredientCost(product, parseFloat(quantity), unit);
+
+    const newIngredient: RecipeIngredient = {
+      product_id: product.id,
+      product_name: product.name,
+      quantity,
+      unit,
+      cost,
+    };
+
+    setIngredients([...ingredients, newIngredient]);
+    setSelectedProduct('');
+    setQuantity('');
+    setUnit('g');
+  };
+
+  const removeIngredient = (index: number) => {
+    setIngredients(ingredients.filter((_, i) => i !== index));
+  };
+
+  const calculateTotalCost = (): number => {
+    return ingredients.reduce((sum, ingredient) => sum + ingredient.cost, 0);
+  };
+
+  const handleNext = () => {
+    if (activeStep === 0) {
+      if (!recipeName) {
+        setSnackbar({
+          open: true,
+          message: 'Please enter recipe name',
+          severity: 'error',
+        });
+        return;
+      }
+    } else if (activeStep === 1) {
+      if (ingredients.length === 0) {
+        setSnackbar({
+          open: true,
+          message: 'Please add at least one ingredient',
+          severity: 'error',
+        });
+        return;
+      }
+    }
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  const handleSaveRecipe = async () => {
     try {
       const response = await fetch('http://localhost:3001/api/recipes', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
-          ingredients,
+          name: recipeName,
+          description: recipeDescription,
+          ingredients: ingredients.map((ing) => ({
+            product_id: ing.product_id,
+            quantity: parseFloat(ing.quantity),
+            unit: ing.unit,
+          })),
         }),
       });
 
@@ -210,312 +197,337 @@ export default function RecipeCreation() {
       if (result.success) {
         setSnackbar({
           open: true,
-          message: 'Recipe created successfully!',
+          message: 'Recipe saved successfully!',
           severity: 'success',
         });
-        setFormData({ name: '', description: '' });
-        setIngredients([]);
-        fetchRecipes();
+        
+        // Reset form
+        setTimeout(() => {
+          setRecipeName('');
+          setRecipeDescription('');
+          setIngredients([]);
+          setActiveStep(0);
+        }, 1500);
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
       setSnackbar({
         open: true,
-        message: `Error: ${error instanceof Error ? error.message : 'Failed to create recipe'}`,
+        message: 'Error saving recipe',
         severity: 'error',
       });
     }
   };
 
-  const handleViewRecipe = async (recipeId: number) => {
-    await fetchRecipeDetails(recipeId);
-    setViewDialog({ open: true, recipeId });
-  };
+  const renderStepContent = (step: number) => {
+    switch (step) {
+      case 0:
+        return (
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Recipe Information
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+                <TextField
+                  label="Recipe Name"
+                  required
+                  fullWidth
+                  value={recipeName}
+                  onChange={(e) => setRecipeName(e.target.value)}
+                  placeholder="e.g., Chocolate Chip Cookies"
+                />
+                <TextField
+                  label="Description"
+                  fullWidth
+                  multiline
+                  rows={4}
+                  value={recipeDescription}
+                  onChange={(e) => setRecipeDescription(e.target.value)}
+                  placeholder="Brief description of the recipe"
+                />
+              </Box>
+            </CardContent>
+          </Card>
+        );
 
-  const calculateRecipeDetailsCost = () => {
-    if (!recipeDetails || !recipeDetails.ingredients) return 0;
-    return recipeDetails.ingredients.reduce((total: number, ingredient: any) => {
-      // Get default vendor pricing info
-      const defaultPrice = getDefaultPrice(ingredient);
-      const defaultWeight = getDefaultWeight(ingredient);
-      const defaultPackageSize = getDefaultPackageSize(ingredient);
-      
-      // Calculate price per gram for the default vendor
-      const pricePerGram = calculatePricePerGram(defaultPrice, defaultWeight, defaultPackageSize);
-      
-      // Calculate cost for this ingredient
-      const ingredientCost = calculateIngredientCost(ingredient.quantity, ingredient.unit, pricePerGram);
-      
-      return total + ingredientCost;
-    }, 0);
-  };
-
-  return (
-    <DashboardLayout>
-      <Box>
-        <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-          Recipe Creation
-        </Typography>
-
-        <Grid container spacing={3}>
-          {/* Recipe Form */}
-          <Grid item xs={12} md={6}>
+      case 1:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Add Ingredient Form */}
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
-                  Create New Recipe
+                <Typography variant="h6" gutterBottom>
+                  Add Ingredient
                 </Typography>
-                <form onSubmit={handleSubmit}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        required
-                        label="Recipe Name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Description"
-                        multiline
-                        rows={2}
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      />
-                    </Grid>
-
-                    {/* Add Ingredient Section */}
-                    <Grid item xs={12}>
-                      <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
-                        Add Ingredients
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={5}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Select Product</InputLabel>
-                        <Select
-                          value={newIngredient.product_id}
-                          label="Select Product"
-                          onChange={(e) =>
-                            setNewIngredient({ ...newIngredient, product_id: e.target.value })
-                          }
-                        >
-                          {products.map((product) => (
-                            <MenuItem key={product.id} value={product.id}>
-                              {product.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={3}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="Quantity"
-                        type="number"
-                        value={newIngredient.quantity}
-                        onChange={(e) =>
-                          setNewIngredient({ ...newIngredient, quantity: e.target.value })
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={3}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Unit</InputLabel>
-                        <Select
-                          value={newIngredient.unit}
-                          label="Unit"
-                          onChange={(e) =>
-                            setNewIngredient({ ...newIngredient, unit: e.target.value })
-                          }
-                        >
-                          <MenuItem value="grams">Grams</MenuItem>
-                          <MenuItem value="kg">Kilograms</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={1}>
-                      <IconButton color="primary" onClick={handleAddIngredient}>
-                        <AddIcon />
-                      </IconButton>
-                    </Grid>
-
-                    {/* Ingredients List */}
-                    {ingredients.length > 0 && (
-                      <Grid item xs={12}>
-                        <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
-                          <Table size="small">
-                            <TableHead>
-                              <TableRow>
-                                <TableCell>Product</TableCell>
-                                <TableCell>Quantity</TableCell>
-                                <TableCell>Cost</TableCell>
-                                <TableCell>Action</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {ingredients.map((ingredient, index) => {
-                                const product = getProductById(ingredient.product_id);
-                                return (
-                                  <TableRow key={index}>
-                                    <TableCell>{product?.name}</TableCell>
-                                    <TableCell>
-                                      {ingredient.quantity} {ingredient.unit}
-                                    </TableCell>
-                                    <TableCell>${calculateIngredientCost(ingredient).toFixed(2)}</TableCell>
-                                    <TableCell>
-                                      <IconButton
-                                        size="small"
-                                        color="error"
-                                        onClick={() => handleRemoveIngredient(index)}
-                                      >
-                                        <DeleteIcon />
-                                      </IconButton>
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
-                              <TableRow>
-                                <TableCell colSpan={2} sx={{ fontWeight: 'bold' }}>
-                                  Total Cost
-                                </TableCell>
-                                <TableCell sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                                  ${calculateTotalCost().toFixed(2)}
-                                </TableCell>
-                                <TableCell />
-                              </TableRow>
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      </Grid>
-                    )}
-
-                    <Grid item xs={12}>
-                      <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                        Create Recipe
-                      </Button>
-                    </Grid>
+                <Grid container spacing={2} sx={{ mt: 1 }}>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Product</InputLabel>
+                      <Select
+                        value={selectedProduct}
+                        onChange={(e) => setSelectedProduct(e.target.value as number)}
+                        label="Product"
+                      >
+                        {products.map((product) => (
+                          <MenuItem key={product.id} value={product.id}>
+                            {product.name}
+                            {product.vendors.length > 0 && (
+                              <Chip
+                                label={`${product.vendors.length} vendor${product.vendors.length !== 1 ? 's' : ''}`}
+                                size="small"
+                                sx={{ ml: 1 }}
+                              />
+                            )}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   </Grid>
-                </form>
+                  <Grid item xs={12} md={3}>
+                    <TextField
+                      label="Quantity"
+                      type="number"
+                      fullWidth
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      inputProps={{ step: '0.01', min: '0' }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <FormControl fullWidth>
+                      <InputLabel>Unit</InputLabel>
+                      <Select
+                        value={unit}
+                        onChange={(e) => setUnit(e.target.value)}
+                        label="Unit"
+                      >
+                        <MenuItem value="g">Grams (g)</MenuItem>
+                        <MenuItem value="kg">Kilograms (kg)</MenuItem>
+                        <MenuItem value="lb">Pounds (lb)</MenuItem>
+                        <MenuItem value="oz">Ounces (oz)</MenuItem>
+                        <MenuItem value="ml">Milliliters (ml)</MenuItem>
+                        <MenuItem value="l">Liters (l)</MenuItem>
+                        <MenuItem value="pcs">Pieces (pcs)</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      onClick={addIngredient}
+                      fullWidth
+                    >
+                      Add Ingredient
+                    </Button>
+                  </Grid>
+                </Grid>
               </CardContent>
             </Card>
-          </Grid>
 
-          {/* Recipes List */}
-          <Grid item xs={12} md={6}>
+            {/* Ingredients List */}
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
-                  Saved Recipes
-                </Typography>
-                <TableContainer component={Paper} sx={{ maxHeight: 600 }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Description</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {recipes.map((recipe) => (
-                        <TableRow key={recipe.id}>
-                          <TableCell>{recipe.name}</TableCell>
-                          <TableCell>{recipe.description}</TableCell>
-                          <TableCell>
-                            <IconButton
-                              color="primary"
-                              onClick={() => handleViewRecipe(recipe.id)}
-                            >
-                              <VisibilityIcon />
-                            </IconButton>
-                          </TableCell>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    Ingredients ({ingredients.length})
+                  </Typography>
+                  <Typography variant="h6" color="primary">
+                    Total: ${calculateTotalCost().toFixed(2)}
+                  </Typography>
+                </Box>
+
+                {ingredients.length > 0 ? (
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Product</TableCell>
+                          <TableCell>Quantity</TableCell>
+                          <TableCell>Unit</TableCell>
+                          <TableCell align="right">Cost</TableCell>
+                          <TableCell align="right">Actions</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* View Recipe Dialog */}
-        <Dialog
-          open={viewDialog.open}
-          onClose={() => setViewDialog({ open: false, recipeId: null })}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>Recipe Details</DialogTitle>
-          <DialogContent>
-            {recipeDetails && (
-              <Box>
-                <Typography variant="h6">{recipeDetails.recipe?.name}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {recipeDetails.recipe?.description}
-                </Typography>
-                <TableContainer component={Paper}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Ingredient</TableCell>
-                        <TableCell>Quantity</TableCell>
-                        <TableCell>Cost</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {recipeDetails.ingredients?.map((ingredient: any, index: number) => {
-                        const prices = [ingredient.vendor1_price, ingredient.vendor2_price, ingredient.vendor3_price];
-                        const defaultPrice = prices[ingredient.default_vendor_index] || 0;
-                        let adjustedQuantity = ingredient.quantity;
-                        if (ingredient.unit === 'kg' && ingredient.purchase_unit === 'grams') {
-                          adjustedQuantity = ingredient.quantity * 1000;
-                        } else if (ingredient.unit === 'grams' && ingredient.purchase_unit === 'kg') {
-                          adjustedQuantity = ingredient.quantity / 1000;
-                        }
-                        const costPerUnit = defaultPrice / ingredient.purchase_quantity;
-                        const cost = costPerUnit * adjustedQuantity;
-
-                        return (
+                      </TableHead>
+                      <TableBody>
+                        {ingredients.map((ingredient, index) => (
                           <TableRow key={index}>
                             <TableCell>{ingredient.product_name}</TableCell>
-                            <TableCell>
-                              {ingredient.quantity} {ingredient.unit}
+                            <TableCell>{ingredient.quantity}</TableCell>
+                            <TableCell>{ingredient.unit}</TableCell>
+                            <TableCell align="right">${ingredient.cost.toFixed(2)}</TableCell>
+                            <TableCell align="right">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => removeIngredient(index)}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
                             </TableCell>
-                            <TableCell>${cost.toFixed(2)}</TableCell>
                           </TableRow>
-                        );
-                      })}
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <Box
+                    sx={{
+                      p: 4,
+                      textAlign: 'center',
+                      bgcolor: 'grey.50',
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="body1" color="text.secondary">
+                      No ingredients added yet. Add ingredients to create your recipe.
+                    </Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Box>
+        );
+
+      case 2:
+        return (
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Review Recipe
+              </Typography>
+              
+              {/* Recipe Info */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                  Recipe Information
+                </Typography>
+                <Typography variant="body1" gutterBottom>
+                  <strong>Name:</strong> {recipeName}
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  <strong>Description:</strong> {recipeDescription || 'No description'}
+                </Typography>
+              </Box>
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Ingredients */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                  Ingredients ({ingredients.length})
+                </Typography>
+                <TableContainer component={Paper} variant="outlined" sx={{ mt: 2 }}>
+                  <Table>
+                    <TableHead>
                       <TableRow>
-                        <TableCell colSpan={2} sx={{ fontWeight: 'bold' }}>
-                          Total Recipe Cost
+                        <TableCell>Product</TableCell>
+                        <TableCell>Quantity</TableCell>
+                        <TableCell align="right">Cost</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {ingredients.map((ingredient, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{ingredient.product_name}</TableCell>
+                          <TableCell>
+                            {ingredient.quantity} {ingredient.unit}
+                          </TableCell>
+                          <TableCell align="right">${ingredient.cost.toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow>
+                        <TableCell colSpan={2}>
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            Total Cost
+                          </Typography>
                         </TableCell>
-                        <TableCell sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                          ${calculateRecipeDetailsCost().toFixed(2)}
+                        <TableCell align="right">
+                          <Typography variant="subtitle1" fontWeight={600} color="primary">
+                            ${calculateTotalCost().toFixed(2)}
+                          </Typography>
                         </TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
                 </TableContainer>
               </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setViewDialog({ open: false, recipeId: null })}>Close</Button>
-          </DialogActions>
-        </Dialog>
+            </CardContent>
+          </Card>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
+          Create Recipe
+        </Typography>
+
+        {/* Stepper */}
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Stepper activeStep={activeStep}>
+              {steps.map((label) => (
+                <Step key={label}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </CardContent>
+        </Card>
+
+        {/* Step Content */}
+        <Box sx={{ mb: 3 }}>
+          {renderStepContent(activeStep)}
+        </Box>
+
+        {/* Navigation Buttons */}
+        <Card>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Button
+                disabled={activeStep === 0}
+                onClick={handleBack}
+                startIcon={<ArrowBackIcon />}
+              >
+                Back
+              </Button>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                {activeStep === steps.length - 1 ? (
+                  <Button
+                    variant="contained"
+                    onClick={handleSaveRecipe}
+                    startIcon={<SaveIcon />}
+                  >
+                    Save Recipe
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    onClick={handleNext}
+                    endIcon={<ArrowForwardIcon />}
+                  >
+                    Next
+                  </Button>
+                )}
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
 
         {/* Snackbar */}
         <Snackbar
           open={snackbar.open}
-          autoHideDuration={6000}
+          autoHideDuration={4000}
           onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
           <Alert
             onClose={() => setSnackbar({ ...snackbar, open: false })}

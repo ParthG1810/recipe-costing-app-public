@@ -211,6 +211,17 @@ app.delete('/api/products/:id', async (req, res) => {
 app.get('/api/recipes', async (req, res) => {
   try {
     const [recipes] = await pool.query('SELECT * FROM recipes ORDER BY created_at DESC');
+    
+    // Add ingredient count to each recipe
+    for (let recipe of recipes) {
+      const [ingredients] = await pool.query(
+        'SELECT COUNT(*) as count FROM recipe_ingredients WHERE recipe_id = ?',
+        [recipe.id]
+      );
+      recipe.ingredients = [];
+      recipe.ingredients.length = ingredients[0].count;
+    }
+    
     res.json({ success: true, data: recipes });
   } catch (error) {
     res.status(500).json({ error: error.message });

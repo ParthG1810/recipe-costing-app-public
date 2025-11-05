@@ -30,6 +30,8 @@ import {
   Select,
   MenuItem,
   Collapse,
+  Grid,
+  CardContent,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -42,23 +44,21 @@ import {
 } from '@mui/icons-material';
 import DashboardLayout from '../components/DashboardLayout';
 
+interface Vendor {
+  id: number;
+  product_id: number;
+  vendor_name: string;
+  price: number;
+  weight: number;
+  package_size: string;
+  is_default: boolean;
+}
+
 interface Product {
   id: number;
   name: string;
   description: string;
-  vendor1_name: string | null;
-  vendor1_price: number | null;
-  vendor1_weight: number | null;
-  vendor1_package_size: string | null;
-  vendor2_name: string | null;
-  vendor2_price: number | null;
-  vendor2_weight: number | null;
-  vendor2_package_size: string | null;
-  vendor3_name: string | null;
-  vendor3_price: number | null;
-  vendor3_weight: number | null;
-  vendor3_package_size: string | null;
-  default_vendor_index: number;
+  vendors: Vendor[];
 }
 
 export default function ProductManagement() {
@@ -68,6 +68,7 @@ export default function ProductManagement() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
 
   const [editDialog, setEditDialog] = useState({
     open: false,
@@ -90,16 +91,27 @@ export default function ProductManagement() {
   }, []);
 
   useEffect(() => {
-    const filtered = products.filter((product) =>
+    let filtered = products.filter((product) =>
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.vendor1_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.vendor2_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.vendor3_name?.toLowerCase().includes(searchQuery.toLowerCase())
+      product.vendors.some((v) => v.vendor_name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-    setFilteredProducts(filtered);
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === 'newest') {
+        return b.id - a.id; // Newest first (higher ID = newer)
+      } else if (sortBy === 'oldest') {
+        return a.id - b.id; // Oldest first
+      } else if (sortBy === 'name') {
+        return a.name.localeCompare(b.name); // Alphabetical
+      }
+      return 0;
+    });
+
+    setFilteredProducts(sorted);
     setPage(0);
-  }, [searchQuery, products]);
+  }, [searchQuery, products, sortBy]);
 
   const fetchProducts = async () => {
     try {
@@ -115,7 +127,7 @@ export default function ProductManagement() {
   };
 
   const handleEditOpen = (product: Product) => {
-    setEditDialog({ open: true, product: { ...product } });
+    setEditDialog({ open: true, product: JSON.parse(JSON.stringify(product)) });
   };
 
   const handleEditClose = () => {
@@ -198,23 +210,87 @@ export default function ProductManagement() {
     }
   };
 
+  const handleVendorChange = (index: number, field: keyof Vendor, value: any) => {
+    if (editDialog.product) {
+      const updatedVendors = [...editDialog.product.vendors];
+      updatedVendors[index] = {
+        ...updatedVendors[index],
+        [field]: value,
+      };
+      setEditDialog({
+        ...editDialog,
+        product: {
+          ...editDialog.product,
+          vendors: updatedVendors,
+        },
+      });
+    }
+  };
+
+  const addVendorToEdit = () => {
+    if (editDialog.product) {
+      setEditDialog({
+        ...editDialog,
+        product: {
+          ...editDialog.product,
+          vendors: [
+            ...editDialog.product.vendors,
+            {
+              id: 0,
+              product_id: editDialog.product.id,
+              vendor_name: '',
+              price: 0,
+              weight: 0,
+              package_size: 'g',
+              is_default: false,
+            },
+          ],
+        },
+      });
+    }
+  };
+
+  const removeVendorFromEdit = (index: number) => {
+    if (editDialog.product && editDialog.product.vendors.length > 1) {
+      const updatedVendors = editDialog.product.vendors.filter((_, i) => i !== index);
+      // If removed vendor was default, set first vendor as default
+      if (editDialog.product.vendors[index].is_default && updatedVendors.length > 0) {
+        updatedVendors[0].is_default = true;
+      }
+      setEditDialog({
+        ...editDialog,
+        product: {
+          ...editDialog.product,
+          vendors: updatedVendors,
+        },
+      });
+    }
+  };
+
+  const setDefaultVendorInEdit = (index: number) => {
+    if (editDialog.product) {
+      const updatedVendors = editDialog.product.vendors.map((v, i) => ({
+        ...v,
+        is_default: i === index,
+      }));
+      setEditDialog({
+        ...editDialog,
+        product: {
+          ...editDialog.product,
+          vendors: updatedVendors,
+        },
+      });
+    }
+  };
+
   const getDefaultPrice = (product: Product): number => {
-    const prices = [product.vendor1_price, product.vendor2_price, product.vendor3_price];
-    const price = prices[product.default_vendor_index];
-    return typeof price === 'number' ? price : 0;
+    const defaultVendor = product.vendors.find((v) => v.is_default);
+    return defaultVendor ? Number(defaultVendor.price) : 0;
   };
 
-  const getDefaultVendor = (product: Product) => {
-    const vendors = [product.vendor1_name, product.vendor2_name, product.vendor3_name];
-    return vendors[product.default_vendor_index] || 'N/A';
-  };
-
-  const getActiveVendorsCount = (product: Product) => {
-    let count = 0;
-    if (product.vendor1_name) count++;
-    if (product.vendor2_name) count++;
-    if (product.vendor3_name) count++;
-    return count;
+  const getDefaultVendor = (product: Product): string => {
+    const defaultVendor = product.vendors.find((v) => v.is_default);
+    return defaultVendor ? defaultVendor.vendor_name : 'N/A';
   };
 
   const toggleRow = (productId: number) => {
@@ -249,7 +325,19 @@ export default function ProductManagement() {
             <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
               Products
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>Sort By</InputLabel>
+                <Select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'name')}
+                  label="Sort By"
+                >
+                  <MenuItem value="newest">Newest First</MenuItem>
+                  <MenuItem value="oldest">Oldest First</MenuItem>
+                  <MenuItem value="name">Name (A-Z)</MenuItem>
+                </Select>
+              </FormControl>
               <TextField
                 size="small"
                 placeholder="Search products..."
@@ -325,7 +413,7 @@ export default function ProductManagement() {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={`${getActiveVendorsCount(product)} vendors`}
+                        label={`${product.vendors.length} vendor${product.vendors.length !== 1 ? 's' : ''}`}
                         size="small"
                         color="primary"
                         variant="outlined"
@@ -362,7 +450,6 @@ export default function ProductManagement() {
                           <Table size="small">
                             <TableHead>
                               <TableRow>
-                                <TableCell>Vendor</TableCell>
                                 <TableCell>Vendor Name</TableCell>
                                 <TableCell>Price</TableCell>
                                 <TableCell>Weight</TableCell>
@@ -372,63 +459,22 @@ export default function ProductManagement() {
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {product.vendor1_name && (
-                                <TableRow>
-                                  <TableCell>Vendor 1</TableCell>
-                                  <TableCell>{product.vendor1_name}</TableCell>
-                                  <TableCell>${typeof product.vendor1_price === 'number' ? product.vendor1_price.toFixed(2) : Number(product.vendor1_price || 0).toFixed(2)}</TableCell>
-                                  <TableCell>{product.vendor1_weight || 0}</TableCell>
-                                  <TableCell>{product.vendor1_package_size || 'g'}</TableCell>
+                              {product.vendors.map((vendor, index) => (
+                                <TableRow key={index}>
+                                  <TableCell>{vendor.vendor_name}</TableCell>
+                                  <TableCell>${Number(vendor.price).toFixed(2)}</TableCell>
+                                  <TableCell>{vendor.weight}</TableCell>
+                                  <TableCell>{vendor.package_size}</TableCell>
                                   <TableCell>
-                                    ${product.vendor1_price && product.vendor1_weight
-                                      ? (Number(product.vendor1_price) / Number(product.vendor1_weight)).toFixed(4)
-                                      : '0.0000'}
+                                    ${(Number(vendor.price) / Number(vendor.weight)).toFixed(4)}
                                   </TableCell>
                                   <TableCell>
-                                    {product.default_vendor_index === 0 && (
+                                    {vendor.is_default && (
                                       <Chip label="Default" size="small" color="success" />
                                     )}
                                   </TableCell>
                                 </TableRow>
-                              )}
-                              {product.vendor2_name && (
-                                <TableRow>
-                                  <TableCell>Vendor 2</TableCell>
-                                  <TableCell>{product.vendor2_name}</TableCell>
-                                  <TableCell>${typeof product.vendor2_price === 'number' ? product.vendor2_price.toFixed(2) : Number(product.vendor2_price || 0).toFixed(2)}</TableCell>
-                                  <TableCell>{product.vendor2_weight || 0}</TableCell>
-                                  <TableCell>{product.vendor2_package_size || 'g'}</TableCell>
-                                  <TableCell>
-                                    ${product.vendor2_price && product.vendor2_weight
-                                      ? (Number(product.vendor2_price) / Number(product.vendor2_weight)).toFixed(4)
-                                      : '0.0000'}
-                                  </TableCell>
-                                  <TableCell>
-                                    {product.default_vendor_index === 1 && (
-                                      <Chip label="Default" size="small" color="success" />
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              )}
-                              {product.vendor3_name && (
-                                <TableRow>
-                                  <TableCell>Vendor 3</TableCell>
-                                  <TableCell>{product.vendor3_name}</TableCell>
-                                  <TableCell>${typeof product.vendor3_price === 'number' ? product.vendor3_price.toFixed(2) : Number(product.vendor3_price || 0).toFixed(2)}</TableCell>
-                                  <TableCell>{product.vendor3_weight || 0}</TableCell>
-                                  <TableCell>{product.vendor3_package_size || 'g'}</TableCell>
-                                  <TableCell>
-                                    ${product.vendor3_price && product.vendor3_weight
-                                      ? (Number(product.vendor3_price) / Number(product.vendor3_weight)).toFixed(4)
-                                      : '0.0000'}
-                                  </TableCell>
-                                  <TableCell>
-                                    {product.default_vendor_index === 2 && (
-                                      <Chip label="Default" size="small" color="success" />
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              )}
+                              ))}
                             </TableBody>
                           </Table>
                         </Box>
@@ -456,6 +502,7 @@ export default function ProductManagement() {
           onClose={handleEditClose}
           maxWidth="md"
           fullWidth
+          fullScreen
         >
           <DialogTitle>
             Edit Product
@@ -470,179 +517,134 @@ export default function ProductManagement() {
             {editDialog.product && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {/* Product Information */}
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Product Information
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <TextField
-                      label="Product Name"
-                      fullWidth
-                      value={editDialog.product.name}
-                      onChange={(e) => handleEditChange('name', e.target.value)}
-                    />
-                    <TextField
-                      label="Description"
-                      fullWidth
-                      multiline
-                      rows={2}
-                      value={editDialog.product.description}
-                      onChange={(e) => handleEditChange('description', e.target.value)}
-                    />
-                  </Box>
-                </Box>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Product Information
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <TextField
+                        label="Product Name"
+                        fullWidth
+                        value={editDialog.product.name}
+                        onChange={(e) => handleEditChange('name', e.target.value)}
+                      />
+                      <TextField
+                        label="Description"
+                        fullWidth
+                        multiline
+                        rows={2}
+                        value={editDialog.product.description}
+                        onChange={(e) => handleEditChange('description', e.target.value)}
+                      />
+                    </Box>
+                  </CardContent>
+                </Card>
 
-                {/* Vendor 1 */}
+                {/* Vendors */}
                 <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Vendor 1
-                  </Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                    <TextField
-                      label="Vendor Name"
-                      value={editDialog.product.vendor1_name || ''}
-                      onChange={(e) => handleEditChange('vendor1_name', e.target.value)}
-                    />
-                    <TextField
-                      label="Price"
-                      type="number"
-                      value={editDialog.product.vendor1_price || ''}
-                      onChange={(e) => handleEditChange('vendor1_price', parseFloat(e.target.value))}
-                    />
-                    <TextField
-                      label="Weight"
-                      type="number"
-                      value={editDialog.product.vendor1_weight || ''}
-                      onChange={(e) => handleEditChange('vendor1_weight', parseFloat(e.target.value))}
-                    />
-                    <FormControl>
-                      <InputLabel>Package Size</InputLabel>
-                      <Select
-                        value={editDialog.product.vendor1_package_size || 'g'}
-                        onChange={(e) => handleEditChange('vendor1_package_size', e.target.value)}
-                        label="Package Size"
-                      >
-                        <MenuItem value="g">Grams (g)</MenuItem>
-                        <MenuItem value="kg">Kilograms (kg)</MenuItem>
-                        <MenuItem value="lb">Pounds (lb)</MenuItem>
-                        <MenuItem value="oz">Ounces (oz)</MenuItem>
-                        <MenuItem value="ml">Milliliters (ml)</MenuItem>
-                        <MenuItem value="l">Liters (l)</MenuItem>
-                        <MenuItem value="pcs">Pieces (pcs)</MenuItem>
-                      </Select>
-                    </FormControl>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6">
+                      Vendors ({editDialog.product.vendors.length})
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      onClick={addVendorToEdit}
+                      size="small"
+                    >
+                      Add Vendor
+                    </Button>
                   </Box>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    sx={{ mt: 1 }}
-                    onClick={() => handleEditChange('default_vendor_index', 0)}
-                    color={editDialog.product.default_vendor_index === 0 ? 'success' : 'primary'}
-                  >
-                    {editDialog.product.default_vendor_index === 0 ? 'Default Vendor' : 'Set as Default'}
-                  </Button>
-                </Box>
 
-                {/* Vendor 2 */}
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Vendor 2 (Optional)
-                  </Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                    <TextField
-                      label="Vendor Name"
-                      value={editDialog.product.vendor2_name || ''}
-                      onChange={(e) => handleEditChange('vendor2_name', e.target.value)}
-                    />
-                    <TextField
-                      label="Price"
-                      type="number"
-                      value={editDialog.product.vendor2_price || ''}
-                      onChange={(e) => handleEditChange('vendor2_price', parseFloat(e.target.value))}
-                    />
-                    <TextField
-                      label="Weight"
-                      type="number"
-                      value={editDialog.product.vendor2_weight || ''}
-                      onChange={(e) => handleEditChange('vendor2_weight', parseFloat(e.target.value))}
-                    />
-                    <FormControl>
-                      <InputLabel>Package Size</InputLabel>
-                      <Select
-                        value={editDialog.product.vendor2_package_size || 'g'}
-                        onChange={(e) => handleEditChange('vendor2_package_size', e.target.value)}
-                        label="Package Size"
-                      >
-                        <MenuItem value="g">Grams (g)</MenuItem>
-                        <MenuItem value="kg">Kilograms (kg)</MenuItem>
-                        <MenuItem value="lb">Pounds (lb)</MenuItem>
-                        <MenuItem value="oz">Ounces (oz)</MenuItem>
-                        <MenuItem value="ml">Milliliters (ml)</MenuItem>
-                        <MenuItem value="l">Liters (l)</MenuItem>
-                        <MenuItem value="pcs">Pieces (pcs)</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Box>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    sx={{ mt: 1 }}
-                    onClick={() => handleEditChange('default_vendor_index', 1)}
-                    color={editDialog.product.default_vendor_index === 1 ? 'success' : 'primary'}
-                  >
-                    {editDialog.product.default_vendor_index === 1 ? 'Default Vendor' : 'Set as Default'}
-                  </Button>
-                </Box>
+                  {editDialog.product.vendors.map((vendor, index) => (
+                    <Card key={index} variant="outlined" sx={{ mb: 2 }}>
+                      <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            Vendor {index + 1}
+                            {vendor.is_default && (
+                              <Chip
+                                label="Default"
+                                size="small"
+                                color="success"
+                                sx={{ ml: 1 }}
+                              />
+                            )}
+                          </Typography>
+                          <Box>
+                            {!vendor.is_default && (
+                              <Button
+                                size="small"
+                                onClick={() => setDefaultVendorInEdit(index)}
+                                sx={{ mr: 1 }}
+                              >
+                                Set as Default
+                              </Button>
+                            )}
+                            {editDialog.product.vendors.length > 1 && (
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => removeVendorFromEdit(index)}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            )}
+                          </Box>
+                        </Box>
 
-                {/* Vendor 3 */}
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Vendor 3 (Optional)
-                  </Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                    <TextField
-                      label="Vendor Name"
-                      value={editDialog.product.vendor3_name || ''}
-                      onChange={(e) => handleEditChange('vendor3_name', e.target.value)}
-                    />
-                    <TextField
-                      label="Price"
-                      type="number"
-                      value={editDialog.product.vendor3_price || ''}
-                      onChange={(e) => handleEditChange('vendor3_price', parseFloat(e.target.value))}
-                    />
-                    <TextField
-                      label="Weight"
-                      type="number"
-                      value={editDialog.product.vendor3_weight || ''}
-                      onChange={(e) => handleEditChange('vendor3_weight', parseFloat(e.target.value))}
-                    />
-                    <FormControl>
-                      <InputLabel>Package Size</InputLabel>
-                      <Select
-                        value={editDialog.product.vendor3_package_size || 'g'}
-                        onChange={(e) => handleEditChange('vendor3_package_size', e.target.value)}
-                        label="Package Size"
-                      >
-                        <MenuItem value="g">Grams (g)</MenuItem>
-                        <MenuItem value="kg">Kilograms (kg)</MenuItem>
-                        <MenuItem value="lb">Pounds (lb)</MenuItem>
-                        <MenuItem value="oz">Ounces (oz)</MenuItem>
-                        <MenuItem value="ml">Milliliters (ml)</MenuItem>
-                        <MenuItem value="l">Liters (l)</MenuItem>
-                        <MenuItem value="pcs">Pieces (pcs)</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Box>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    sx={{ mt: 1 }}
-                    onClick={() => handleEditChange('default_vendor_index', 2)}
-                    color={editDialog.product.default_vendor_index === 2 ? 'success' : 'primary'}
-                  >
-                    {editDialog.product.default_vendor_index === 2 ? 'Default Vendor' : 'Set as Default'}
-                  </Button>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12}>
+                            <TextField
+                              label="Vendor Name"
+                              fullWidth
+                              value={vendor.vendor_name}
+                              onChange={(e) => handleVendorChange(index, 'vendor_name', e.target.value)}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={4}>
+                            <TextField
+                              label="Price"
+                              fullWidth
+                              type="number"
+                              value={vendor.price}
+                              onChange={(e) => handleVendorChange(index, 'price', parseFloat(e.target.value))}
+                              inputProps={{ step: '0.01', min: '0' }}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={4}>
+                            <TextField
+                              label="Weight"
+                              fullWidth
+                              type="number"
+                              value={vendor.weight}
+                              onChange={(e) => handleVendorChange(index, 'weight', parseFloat(e.target.value))}
+                              inputProps={{ step: '0.01', min: '0' }}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={4}>
+                            <FormControl fullWidth>
+                              <InputLabel>Package Size</InputLabel>
+                              <Select
+                                value={vendor.package_size}
+                                onChange={(e) => handleVendorChange(index, 'package_size', e.target.value)}
+                                label="Package Size"
+                              >
+                                <MenuItem value="g">Grams (g)</MenuItem>
+                                <MenuItem value="kg">Kilograms (kg)</MenuItem>
+                                <MenuItem value="lb">Pounds (lb)</MenuItem>
+                                <MenuItem value="oz">Ounces (oz)</MenuItem>
+                                <MenuItem value="ml">Milliliters (ml)</MenuItem>
+                                <MenuItem value="l">Liters (l)</MenuItem>
+                                <MenuItem value="pcs">Pieces (pcs)</MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </Box>
               </Box>
             )}
