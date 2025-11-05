@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Box,
   Card,
@@ -66,8 +67,13 @@ interface RecipeIngredient {
 const steps = ['Recipe Information', 'Add Ingredients', 'Review & Save'];
 
 export default function RecipeCreation() {
+  const searchParams = useSearchParams();
+  const recipeId = searchParams.get('id');
+  const isEditMode = !!recipeId;
+  
   const [activeStep, setActiveStep] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
+  const [isLoadingRecipe, setIsLoadingRecipe] = useState(false);
   const [recipeName, setRecipeName] = useState('');
   const [recipeDescription, setRecipeDescription] = useState('');
   const [ingredients, setIngredients] = useState<RecipeIngredient[]>([]);
@@ -85,6 +91,12 @@ export default function RecipeCreation() {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    if (isEditMode && recipeId && products.length > 0) {
+      fetchRecipeData(recipeId);
+    }
+  }, [isEditMode, recipeId, products]);
+
   const fetchProducts = async () => {
     try {
       const response = await fetch('http://localhost:3001/api/products');
@@ -94,6 +106,45 @@ export default function RecipeCreation() {
       }
     } catch (error) {
       console.error('Error fetching products:', error);
+    }
+  };
+
+  const fetchRecipeData = async (id: string) => {
+    setIsLoadingRecipe(true);
+    try {
+      const response = await fetch(`http://localhost:3001/api/recipes/${id}`);
+      const recipeData = await response.json();
+      
+      if (recipeData) {
+        setRecipeName(recipeData.name || '');
+        setRecipeDescription(recipeData.description || '');
+        
+        // Convert recipe ingredients to the format used in the form
+        if (recipeData.ingredients && recipeData.ingredients.length > 0) {
+          const formattedIngredients = recipeData.ingredients.map((ing: any) => {
+            const product = products.find(p => p.id === ing.product_id);
+            const cost = product ? calculateIngredientCost(product, parseFloat(ing.quantity), ing.unit) : 0;
+            
+            return {
+              product_id: ing.product_id,
+              product_name: ing.product_name,
+              quantity: ing.quantity.toString(),
+              unit: ing.unit,
+              cost: cost
+            };
+          });
+          setIngredients(formattedIngredients);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching recipe data:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error loading recipe data',
+        severity: 'error',
+      });
+    } finally {
+      setIsLoadingRecipe(false);
     }
   };
 
@@ -178,8 +229,14 @@ export default function RecipeCreation() {
 
   const handleSaveRecipe = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/recipes', {
-        method: 'POST',
+      const url = isEditMode 
+        ? `http://localhost:3001/api/recipes/${recipeId}`
+        : 'http://localhost:3001/api/recipes';
+      
+      const method = isEditMode ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: recipeName,
@@ -197,17 +254,24 @@ export default function RecipeCreation() {
       if (result.success) {
         setSnackbar({
           open: true,
-          message: 'Recipe saved successfully!',
+          message: isEditMode ? 'Recipe updated successfully!' : 'Recipe saved successfully!',
           severity: 'success',
         });
         
-        // Reset form
-        setTimeout(() => {
-          setRecipeName('');
-          setRecipeDescription('');
-          setIngredients([]);
-          setActiveStep(0);
-        }, 1500);
+        // Reset form only in create mode
+        if (!isEditMode) {
+          setTimeout(() => {
+            setRecipeName('');
+            setRecipeDescription('');
+            setIngredients([]);
+            setActiveStep(0);
+          }, 1500);
+        } else {
+          // In edit mode, just go back to step 0 to show the updated data
+          setTimeout(() => {
+            setActiveStep(0);
+          }, 1500);
+        }
       } else {
         throw new Error(result.error);
       }
@@ -467,8 +531,13 @@ export default function RecipeCreation() {
     <DashboardLayout>
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
-          Create Recipe
+          {isEditMode ? 'Edit Recipe' : 'Create Recipe'}
         </Typography>
+        {isLoadingRecipe && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Loading recipe data...
+          </Typography>
+        )}
 
         {/* Stepper */}
         <Card sx={{ mb: 3 }}>
@@ -506,7 +575,7 @@ export default function RecipeCreation() {
                     onClick={handleSaveRecipe}
                     startIcon={<SaveIcon />}
                   >
-                    Save Recipe
+                    {isEditMode ? 'Update Recipe' : 'Save Recipe'}
                   </Button>
                 ) : (
                   <Button
