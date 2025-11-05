@@ -20,8 +20,7 @@ CREATE TABLE IF NOT EXISTS recipe_images (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
-    -- Foreign key constraint
-    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    -- Foreign key constraint (user_id removed - no users table yet)
     
     -- Indexes for performance
     INDEX idx_recipe_id (recipe_id),
@@ -36,7 +35,7 @@ COMMENT='Stores multiple images for each recipe with Canva integration';
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS weekly_menus (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id INT DEFAULT 1 COMMENT 'User ID - set to 1 for single-user mode',
     week_start_date DATE NOT NULL COMMENT 'The Monday of the menu week',
     name VARCHAR(255) DEFAULT NULL COMMENT 'Optional name for the menu (e.g., "Diwali Special Week")',
     description TEXT DEFAULT NULL COMMENT 'Optional description of the menu',
@@ -47,8 +46,7 @@ CREATE TABLE IF NOT EXISTS weekly_menus (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
-    -- Foreign key constraint
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    -- Foreign key constraint (user_id removed - no users table yet)
     
     -- Indexes for performance
     INDEX idx_user_id (user_id),
@@ -110,8 +108,7 @@ CREATE TABLE IF NOT EXISTS canva_templates (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
-    -- Foreign key constraint
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    -- Foreign key constraint (user_id removed - no users table yet)
     
     -- Indexes for performance
     INDEX idx_user_id (user_id),

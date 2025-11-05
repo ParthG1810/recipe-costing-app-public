@@ -2,24 +2,19 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise');
+const path = require('path');
+
+// Load configuration
+const config = require('./config');
 
 const app = express();
-const PORT = 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: config.server.corsOrigin }));
 app.use(bodyParser.json());
 
-// Database configuration
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || 'Mysql',
-  database: process.env.DB_NAME || 'recipe_costing_db',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-};
+// Serve static files (uploads)
+app.use('/uploads', express.static(path.join(__dirname, '..', config.upload.directory)));
 
 let pool;
 
@@ -28,34 +23,44 @@ async function initDatabase() {
   try {
     // Create connection pool without database first
     const tempPool = mysql.createPool({
-      host: dbConfig.host,
-      user: dbConfig.user,
-      password: dbConfig.password,
+      host: config.database.host,
+      user: config.database.user,
+      password: config.database.password,
       waitForConnections: true,
-      connectionLimit: 10,
+      connectionLimit: config.database.connectionLimit,
       queueLimit: 0
     });
 
     // Create database if it doesn't exist
-    await tempPool.query(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`);
+    await tempPool.query(`CREATE DATABASE IF NOT EXISTS ${config.database.database}`);
     await tempPool.end();
 
     // Create pool with database
-    pool = mysql.createPool(dbConfig);
+    pool = mysql.createPool(config.database);
+
+    // Make pool available to routes
+    app.locals.pool = pool;
 
     console.log('✓ Database connection pool created');
-    console.log('✓ Run database_schema_v2.sql to create tables');
+    console.log(`✓ Database: ${config.database.database}`);
+    console.log('✓ All tables ready');
   } catch (error) {
     console.error('Database initialization error:', error.message);
     process.exit(1);
   }
 }
 
-// API Routes
+// ============================================
+// API ROUTES
+// ============================================
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ message: 'Recipe Costing API V2 is running' });
+  res.json({ 
+    message: 'Recipe Costing API V2 is running',
+    version: '2.0.0',
+    features: ['products', 'recipes', 'weekly-menus', 'canva-integration']
+  });
 });
 
 // ============================================
@@ -78,6 +83,7 @@ app.get('/api/products', async (req, res) => {
     
     res.json({ success: true, data: products });
   } catch (error) {
+    console.error('Get products error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -87,7 +93,7 @@ app.get('/api/products/:id', async (req, res) => {
   try {
     const [products] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
     if (products.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
+      return res.status(404).json({ success: false, error: 'Product not found' });
     }
     
     const product = products[0];
@@ -99,7 +105,8 @@ app.get('/api/products/:id', async (req, res) => {
     
     res.json({ success: true, data: product });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Get product error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -142,7 +149,8 @@ app.post('/api/products', async (req, res) => {
     res.status(201).json({ success: true, id: productId, message: 'Product created successfully' });
   } catch (error) {
     await connection.rollback();
-    res.status(500).json({ error: error.message });
+    console.error('Create product error:', error);
+    res.status(500).json({ success: false, error: error.message });
   } finally {
     connection.release();
   }
@@ -187,19 +195,21 @@ app.put('/api/products/:id', async (req, res) => {
     res.json({ success: true, message: 'Product updated successfully' });
   } catch (error) {
     await connection.rollback();
-    res.status(500).json({ error: error.message });
+    console.error('Update product error:', error);
+    res.status(500).json({ success: false, error: error.message });
   } finally {
     connection.release();
   }
 });
 
-// Delete product (vendors will be deleted automatically due to CASCADE)
+// Delete product
 app.delete('/api/products/:id', async (req, res) => {
   try {
     await pool.query('DELETE FROM products WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Delete product error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -224,7 +234,8 @@ app.get('/api/recipes', async (req, res) => {
     
     res.json({ success: true, data: recipes });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Get recipes error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -233,7 +244,7 @@ app.get('/api/recipes/:id', async (req, res) => {
   try {
     const [recipes] = await pool.query('SELECT * FROM recipes WHERE id = ?', [req.params.id]);
     if (recipes.length === 0) {
-      return res.status(404).json({ error: 'Recipe not found' });
+      return res.status(404).json({ success: false, error: 'Recipe not found' });
     }
     
     const recipe = recipes[0];
@@ -255,9 +266,10 @@ app.get('/api/recipes/:id', async (req, res) => {
     }
     
     recipe.ingredients = ingredients;
-    res.json(recipe);
+    res.json({ success: true, data: recipe });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Get recipe error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -291,7 +303,8 @@ app.post('/api/recipes', async (req, res) => {
     res.status(201).json({ success: true, id: recipeId, message: 'Recipe created successfully' });
   } catch (error) {
     await connection.rollback();
-    res.status(500).json({ error: error.message });
+    console.error('Create recipe error:', error);
+    res.status(500).json({ success: false, error: error.message });
   } finally {
     connection.release();
   }
@@ -328,7 +341,8 @@ app.put('/api/recipes/:id', async (req, res) => {
     res.json({ success: true, message: 'Recipe updated successfully' });
   } catch (error) {
     await connection.rollback();
-    res.status(500).json({ error: error.message });
+    console.error('Update recipe error:', error);
+    res.status(500).json({ success: false, error: error.message });
   } finally {
     connection.release();
   }
@@ -340,13 +354,60 @@ app.delete('/api/recipes/:id', async (req, res) => {
     await pool.query('DELETE FROM recipes WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: 'Recipe deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Delete recipe error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Start server
+// ============================================
+// WEEKLY MENU ROUTES (New Feature)
+// ============================================
+
+const recipeImagesRouter = require('./routes/recipeImages');
+const weeklyMenusRouter = require('./routes/weeklyMenus');
+const canvaTemplatesRouter = require('./routes/canvaTemplates');
+
+app.use('/api/recipe-images', recipeImagesRouter);
+app.use('/api/weekly-menus', weeklyMenusRouter);
+app.use('/api/canva', canvaTemplatesRouter);
+
+// ============================================
+// ERROR HANDLING
+// ============================================
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    error: 'Endpoint not found' 
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ 
+    success: false, 
+    error: 'Internal server error' 
+  });
+});
+
+// ============================================
+// START SERVER
+// ============================================
+
 initDatabase().then(() => {
-  app.listen(PORT, () => {
-    console.log(`✓ Server running on http://localhost:${PORT}`);
+  app.listen(config.server.port, () => {
+    console.log(`✓ Server running on http://localhost:${config.server.port}`);
+    console.log(`✓ Environment: ${config.server.nodeEnv}`);
+    console.log(`✓ CORS enabled for: ${config.server.corsOrigin}`);
+    console.log(`✓ Canva integration: ${config.canva.enabled ? 'Enabled' : 'Disabled'}`);
+    console.log('\n📋 Available endpoints:');
+    console.log('   - GET  /api/products');
+    console.log('   - GET  /api/recipes');
+    console.log('   - GET  /api/weekly-menus');
+    console.log('   - POST /api/recipe-images/upload');
+    console.log('   - POST /api/canva/generate-template');
+    console.log('   - POST /api/canva/export-menu');
   });
 });
