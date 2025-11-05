@@ -68,6 +68,7 @@ export default function ProductManagement() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
 
   const [editDialog, setEditDialog] = useState({
     open: false,
@@ -90,14 +91,27 @@ export default function ProductManagement() {
   }, []);
 
   useEffect(() => {
-    const filtered = products.filter((product) =>
+    let filtered = products.filter((product) =>
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.vendors.some((v) => v.vendor_name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-    setFilteredProducts(filtered);
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === 'newest') {
+        return b.id - a.id; // Newest first (higher ID = newer)
+      } else if (sortBy === 'oldest') {
+        return a.id - b.id; // Oldest first
+      } else if (sortBy === 'name') {
+        return a.name.localeCompare(b.name); // Alphabetical
+      }
+      return 0;
+    });
+
+    setFilteredProducts(sorted);
     setPage(0);
-  }, [searchQuery, products]);
+  }, [searchQuery, products, sortBy]);
 
   const fetchProducts = async () => {
     try {
@@ -311,7 +325,19 @@ export default function ProductManagement() {
             <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
               Products
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>Sort By</InputLabel>
+                <Select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'name')}
+                  label="Sort By"
+                >
+                  <MenuItem value="newest">Newest First</MenuItem>
+                  <MenuItem value="oldest">Oldest First</MenuItem>
+                  <MenuItem value="name">Name (A-Z)</MenuItem>
+                </Select>
+              </FormControl>
               <TextField
                 size="small"
                 placeholder="Search products..."

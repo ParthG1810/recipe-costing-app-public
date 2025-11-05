@@ -18,6 +18,7 @@ import {
   AddCircle as AddCircleIcon,
   Inventory as InventoryIcon,
   Restaurant as RestaurantIcon,
+  MenuBook as MenuBookIcon,
 } from '@mui/icons-material';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -35,6 +36,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { text: 'Product Entry', icon: <AddCircleIcon />, path: '/product-entry' },
     { text: 'Product Management', icon: <InventoryIcon />, path: '/product-management' },
     { text: 'Recipe Creation', icon: <RestaurantIcon />, path: '/recipe-creation' },
+    { text: 'Recipe Management', icon: <MenuBookIcon />, path: '/recipe-management' },
   ];
 
   return (
