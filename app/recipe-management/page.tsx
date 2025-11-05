@@ -366,10 +366,14 @@ export default function RecipeManagement() {
                             </TableHead>
                             <TableBody>
                               {recipe.ingredients?.map((ingredient: any) => {
-                                const product = products.find((p: any) => p.id === ingredient.product_id);
-                                const defaultVendor = product?.vendors?.find((v: any) => v.is_default);
-                                const pricePerGram = defaultVendor ? Number(defaultVendor.price) / Number(defaultVendor.weight) : 0;
-                                const cost = pricePerGram * Number(ingredient.quantity);
+                                const defaultVendor = ingredient.vendors?.find((v: any) => v.is_default) || ingredient.vendors?.[0];
+                                const quantityInGrams = convertToGrams(ingredient.quantity, ingredient.unit);
+                                const vendorWeightInGrams = defaultVendor
+                                  ? convertToGrams(defaultVendor.weight, defaultVendor.package_size)
+                                  : 0;
+                                const cost = defaultVendor
+                                  ? (Number(defaultVendor.price) / vendorWeightInGrams) * quantityInGrams
+                                  : 0;
 
                                 return (
                                   <TableRow key={ingredient.id}>
@@ -391,10 +395,14 @@ export default function RecipeManagement() {
                                   <Typography variant="subtitle1" fontWeight="bold" color="primary">
                                     ${
                                       recipe.ingredients?.reduce((total: number, ingredient: any) => {
-                                        const product = products.find((p: any) => p.id === ingredient.product_id);
-                                        const defaultVendor = product?.vendors?.find((v: any) => v.is_default);
-                                        const pricePerGram = defaultVendor ? Number(defaultVendor.price) / Number(defaultVendor.weight) : 0;
-                                        const cost = pricePerGram * Number(ingredient.quantity);
+                                        const defaultVendor = ingredient.vendors?.find((v: any) => v.is_default) || ingredient.vendors?.[0];
+                                        const quantityInGrams = convertToGrams(ingredient.quantity, ingredient.unit);
+                                        const vendorWeightInGrams = defaultVendor
+                                          ? convertToGrams(defaultVendor.weight, defaultVendor.package_size)
+                                          : 0;
+                                        const cost = defaultVendor
+                                          ? (Number(defaultVendor.price) / vendorWeightInGrams) * quantityInGrams
+                                          : 0;
                                         return total + cost;
                                       }, 0).toFixed(2) || '0.00'
                                     }
