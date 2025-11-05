@@ -336,115 +336,146 @@ export default function RecipeCreationContent() {
         return (
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-                Add Ingredients
-              </Typography>
-              <Grid container spacing={3} sx={{ mt: 1 }}>
-                <Grid item xs={12} md={5}>
-                  <FormControl fullWidth>
-                    <InputLabel sx={{ fontSize: '1.05rem' }}>Select Product</InputLabel>
-                    <Select
-                      value={selectedProduct}
-                      onChange={(e) => setSelectedProduct(e.target.value as number)}
-                      label="Select Product"
-                      sx={{ fontSize: '1.05rem' }}
-                    >
-                      {products.map((product) => (
-                        <MenuItem key={product.id} value={product.id} sx={{ fontSize: '1.05rem' }}>
-                          {product.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    label="Quantity"
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    fullWidth
-                    inputProps={{ min: 0, step: 0.01 }}
-                    InputProps={{
-                      sx: { fontSize: '1.05rem' }
-                    }}
-                    InputLabelProps={{
-                      sx: { fontSize: '1.05rem' }
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={2}>
-                  <FormControl fullWidth>
-                    <InputLabel sx={{ fontSize: '1.05rem' }}>Unit</InputLabel>
-                    <Select value={unit} onChange={(e) => setUnit(e.target.value)} label="Unit" sx={{ fontSize: '1.05rem' }}>
-                      <MenuItem value="g" sx={{ fontSize: '1.05rem' }}>g</MenuItem>
-                      <MenuItem value="kg" sx={{ fontSize: '1.05rem' }}>kg</MenuItem>
-                      <MenuItem value="lb" sx={{ fontSize: '1.05rem' }}>lb</MenuItem>
-                      <MenuItem value="oz" sx={{ fontSize: '1.05rem' }}>oz</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={2}>
-                  <Button
-                    variant="contained"
-                    onClick={addIngredient}
-                    startIcon={<AddIcon />}
-                    fullWidth
-                    sx={{ height: '56px', fontSize: '1.05rem' }}
-                  >
-                    Add
-                  </Button>
-                </Grid>
-              </Grid>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">
+                  Add Ingredients
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={addIngredient}
+                  size="small"
+                >
+                  Add Ingredient
+                </Button>
+              </Box>
+
+              {/* Inline ingredient input form */}
+              <Card variant="outlined" sx={{ position: 'relative' }}>
+                <CardContent>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} sm={5}>
+                      <FormControl fullWidth>
+                        <InputLabel sx={{ fontSize: '1.05rem' }}>Select Product</InputLabel>
+                        <Select
+                          value={selectedProduct}
+                          onChange={(e) => setSelectedProduct(e.target.value as number)}
+                          sx={{ fontSize: '1.05rem' }}
+                          label="Select Product"
+                        >
+                          {products.map((product) => (
+                            <MenuItem key={product.id} value={product.id} sx={{ fontSize: '1.05rem' }}>
+                              {product.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        label="Quantity"
+                        required
+                        fullWidth
+                        type="number"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        placeholder="0"
+                        inputProps={{ step: '0.01', min: '0' }}
+                        InputProps={{
+                          sx: { fontSize: '1.05rem' }
+                        }}
+                        InputLabelProps={{
+                          sx: { fontSize: '1.05rem' }
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <FormControl fullWidth>
+                        <InputLabel sx={{ fontSize: '1.05rem' }}>Unit</InputLabel>
+                        <Select
+                          value={unit}
+                          onChange={(e) => setUnit(e.target.value)}
+                          sx={{ fontSize: '1.05rem' }}
+                          label="Unit"
+                        >
+                          <MenuItem value="g" sx={{ fontSize: '1.05rem' }}>Grams (g)</MenuItem>
+                          <MenuItem value="kg" sx={{ fontSize: '1.05rem' }}>Kilograms (kg)</MenuItem>
+                          <MenuItem value="lb" sx={{ fontSize: '1.05rem' }}>Pounds (lb)</MenuItem>
+                          <MenuItem value="oz" sx={{ fontSize: '1.05rem' }}>Ounces (oz)</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+
+              {ingredients.map((ingredient, index) => (
+                <Card key={index} variant="outlined" sx={{ position: 'relative', mb: 2 }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        Ingredient {index + 1}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => removeIngredient(index)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} sm={4}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Product
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontSize: '1.05rem', fontWeight: 500 }}>
+                          {ingredient.product_name}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={3}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Quantity
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontSize: '1.05rem', fontWeight: 500 }}>
+                          {ingredient.quantity}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={2}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Unit
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontSize: '1.05rem', fontWeight: 500 }}>
+                          {ingredient.unit}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={3}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Cost
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontSize: '1.05rem', fontWeight: 600, color: 'primary.main' }}>
+                          ${ingredient.cost.toFixed(2)}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+              ))}
 
               {ingredients.length > 0 && (
-                <Box sx={{ mt: 4 }}>
-                  <TableContainer component={Box} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell sx={{ fontSize: '1.05rem', fontWeight: 600 }}>Product</TableCell>
-                          <TableCell sx={{ fontSize: '1.05rem', fontWeight: 600 }}>Quantity</TableCell>
-                          <TableCell sx={{ fontSize: '1.05rem', fontWeight: 600 }}>Unit</TableCell>
-                          <TableCell align="right" sx={{ fontSize: '1.05rem', fontWeight: 600 }}>Cost</TableCell>
-                          <TableCell align="center" sx={{ fontSize: '1.05rem', fontWeight: 600 }}>Action</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {ingredients.map((ingredient, index) => (
-                          <TableRow key={index}>
-                            <TableCell sx={{ fontSize: '1.05rem', py: 2 }}>{ingredient.product_name}</TableCell>
-                            <TableCell sx={{ fontSize: '1.05rem', py: 2 }}>{ingredient.quantity}</TableCell>
-                            <TableCell sx={{ fontSize: '1.05rem', py: 2 }}>{ingredient.unit}</TableCell>
-                            <TableCell align="right" sx={{ fontSize: '1.05rem', py: 2 }}>${ingredient.cost.toFixed(2)}</TableCell>
-                            <TableCell align="center" sx={{ py: 2 }}>
-                              <IconButton
-                                color="error"
-                                size="medium"
-                                onClick={() => removeIngredient(index)}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        <TableRow sx={{ bgcolor: 'grey.50' }}>
-                          <TableCell colSpan={3} sx={{ py: 2.5 }}>
-                            <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '1.1rem' }}>
-                              Total Cost
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="right" sx={{ py: 2.5 }}>
-                            <Typography variant="subtitle1" fontWeight={700} color="primary" sx={{ fontSize: '1.1rem' }}>
-                              ${calculateTotalCost().toFixed(2)}
-                            </Typography>
-                          </TableCell>
-                          <TableCell />
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Box>
+                <Card variant="outlined" sx={{ mt: 2, bgcolor: 'grey.50' }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        Total Cost
+                      </Typography>
+                      <Typography variant="subtitle1" fontWeight={700} color="primary">
+                        ${calculateTotalCost().toFixed(2)}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
               )}
             </CardContent>
           </Card>
