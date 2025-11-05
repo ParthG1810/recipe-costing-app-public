@@ -104,6 +104,10 @@ export default function RecipeCreationContent() {
       const result = await response.json();
       if (result.success) {
         setProducts(result.data);
+        // Set first product as default selection if products exist
+        if (result.data.length > 0 && !selectedProduct) {
+          setSelectedProduct(result.data[0].id);
+        }
       }
     } catch (error) {
       console.error('Error fetching products:', error);
