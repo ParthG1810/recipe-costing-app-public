@@ -304,18 +304,17 @@ export default function ProductEntryContent() {
               <Card key={index} variant="outlined" sx={{ position: 'relative' }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="subtitle1" fontWeight={600} component="span">
-                        Vendor {index + 1}
-                      </Typography>
+                    <Typography variant="subtitle1" fontWeight={600} component="div">
+                      Vendor {index + 1}
                       {vendor.is_default && (
                         <Chip
                           label="Default"
                           size="small"
                           color="success"
+                          sx={{ ml: 1 }}
                         />
                       )}
-                    </Box>
+                    </Typography>
                     <Box>
                       {!vendor.is_default && (
                         <Button
@@ -462,18 +461,17 @@ export default function ProductEntryContent() {
                       <Box key={index}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="body1" fontWeight={600} component="span">
-                                {vendor.vendor_name}
-                              </Typography>
+                            <Typography variant="body1" fontWeight={600} component="div">
+                              {vendor.vendor_name}
                               {vendor.is_default && (
                                 <Chip
                                   label="Default"
                                   size="small"
                                   color="success"
+                                  sx={{ ml: 1 }}
                                 />
                               )}
-                            </Box>
+                            </Typography>
                             <Typography variant="body2" color="text.secondary">
                               ${vendor.price} for {vendor.weight} {vendor.package_size}
                             </Typography>
