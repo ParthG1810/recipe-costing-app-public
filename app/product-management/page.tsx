@@ -376,12 +376,12 @@ export default function ProductManagement() {
                                 <TableRow>
                                   <TableCell>Vendor 1</TableCell>
                                   <TableCell>{product.vendor1_name}</TableCell>
-                                  <TableCell>${product.vendor1_price?.toFixed(2) || '0.00'}</TableCell>
+                                  <TableCell>${typeof product.vendor1_price === 'number' ? product.vendor1_price.toFixed(2) : Number(product.vendor1_price || 0).toFixed(2)}</TableCell>
                                   <TableCell>{product.vendor1_weight || 0}</TableCell>
                                   <TableCell>{product.vendor1_package_size || 'g'}</TableCell>
                                   <TableCell>
                                     ${product.vendor1_price && product.vendor1_weight
-                                      ? (product.vendor1_price / product.vendor1_weight).toFixed(4)
+                                      ? (Number(product.vendor1_price) / Number(product.vendor1_weight)).toFixed(4)
                                       : '0.0000'}
                                   </TableCell>
                                   <TableCell>
@@ -395,12 +395,12 @@ export default function ProductManagement() {
                                 <TableRow>
                                   <TableCell>Vendor 2</TableCell>
                                   <TableCell>{product.vendor2_name}</TableCell>
-                                  <TableCell>${product.vendor2_price?.toFixed(2) || '0.00'}</TableCell>
+                                  <TableCell>${typeof product.vendor2_price === 'number' ? product.vendor2_price.toFixed(2) : Number(product.vendor2_price || 0).toFixed(2)}</TableCell>
                                   <TableCell>{product.vendor2_weight || 0}</TableCell>
                                   <TableCell>{product.vendor2_package_size || 'g'}</TableCell>
                                   <TableCell>
                                     ${product.vendor2_price && product.vendor2_weight
-                                      ? (product.vendor2_price / product.vendor2_weight).toFixed(4)
+                                      ? (Number(product.vendor2_price) / Number(product.vendor2_weight)).toFixed(4)
                                       : '0.0000'}
                                   </TableCell>
                                   <TableCell>
@@ -414,12 +414,12 @@ export default function ProductManagement() {
                                 <TableRow>
                                   <TableCell>Vendor 3</TableCell>
                                   <TableCell>{product.vendor3_name}</TableCell>
-                                  <TableCell>${product.vendor3_price?.toFixed(2) || '0.00'}</TableCell>
+                                  <TableCell>${typeof product.vendor3_price === 'number' ? product.vendor3_price.toFixed(2) : Number(product.vendor3_price || 0).toFixed(2)}</TableCell>
                                   <TableCell>{product.vendor3_weight || 0}</TableCell>
                                   <TableCell>{product.vendor3_package_size || 'g'}</TableCell>
                                   <TableCell>
                                     ${product.vendor3_price && product.vendor3_weight
-                                      ? (product.vendor3_price / product.vendor3_weight).toFixed(4)
+                                      ? (Number(product.vendor3_price) / Number(product.vendor3_weight)).toFixed(4)
                                       : '0.0000'}
                                   </TableCell>
                                   <TableCell>
