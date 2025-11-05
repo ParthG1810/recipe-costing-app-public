@@ -32,7 +32,6 @@ import {
   Collapse,
   Grid,
   CardContent,
-  TableSortLabel,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -69,8 +68,7 @@ export default function ProductManagement() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [orderBy, setOrderBy] = useState<'id' | 'name'>('id');
-  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
 
   const [editDialog, setEditDialog] = useState({
     open: false,
@@ -101,18 +99,19 @@ export default function ProductManagement() {
 
     // Apply sorting
     const sorted = [...filtered].sort((a, b) => {
-      let comparison = 0;
-      if (orderBy === 'id') {
-        comparison = a.id - b.id;
-      } else if (orderBy === 'name') {
-        comparison = a.name.localeCompare(b.name);
+      if (sortBy === 'newest') {
+        return b.id - a.id; // Newest first (higher ID = newer)
+      } else if (sortBy === 'oldest') {
+        return a.id - b.id; // Oldest first
+      } else if (sortBy === 'name') {
+        return a.name.localeCompare(b.name); // Alphabetical
       }
-      return order === 'asc' ? comparison : -comparison;
+      return 0;
     });
 
     setFilteredProducts(sorted);
     setPage(0);
-  }, [searchQuery, products, orderBy, order]);
+  }, [searchQuery, products, sortBy]);
 
   const fetchProducts = async () => {
     try {
@@ -327,6 +326,18 @@ export default function ProductManagement() {
               Products
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>Sort By</InputLabel>
+                <Select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'name')}
+                  label="Sort By"
+                >
+                  <MenuItem value="newest">Newest First</MenuItem>
+                  <MenuItem value="oldest">Oldest First</MenuItem>
+                  <MenuItem value="name">Name (A-Z)</MenuItem>
+                </Select>
+              </FormControl>
               <TextField
                 size="small"
                 placeholder="Search products..."
@@ -357,38 +368,8 @@ export default function ProductManagement() {
             <TableHead>
               <TableRow>
                 <TableCell width={50} />
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === 'id'}
-                    direction={orderBy === 'id' ? order : 'asc'}
-                    onClick={() => {
-                      if (orderBy === 'id') {
-                        setOrder(order === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setOrderBy('id');
-                        setOrder('desc');
-                      }
-                    }}
-                  >
-                    ID
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === 'name'}
-                    direction={orderBy === 'name' ? order : 'asc'}
-                    onClick={() => {
-                      if (orderBy === 'name') {
-                        setOrder(order === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setOrderBy('name');
-                        setOrder('asc');
-                      }
-                    }}
-                  >
-                    Product Name
-                  </TableSortLabel>
-                </TableCell>
+                <TableCell>ID</TableCell>
+                <TableCell>Product Name</TableCell>
                 <TableCell>Description</TableCell>
                 <TableCell>Default Price</TableCell>
                 <TableCell>Vendors</TableCell>
