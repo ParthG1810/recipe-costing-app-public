@@ -502,6 +502,35 @@ export default function ProductEntryContent() {
   return (
     <DashboardLayout>
       <Box sx={{ p: 3 }}>
+        {/* Navigation Buttons - Above header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+          <Button
+            disabled={activeStep === 0}
+            onClick={handleBack}
+            startIcon={<ArrowBackIcon />}
+          >
+            Back
+          </Button>
+          {activeStep === steps.length - 1 ? (
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              startIcon={<SaveIcon />}
+            >
+              {isEditMode ? 'Update Product' : 'Create Product'}
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              disabled={!isStepValid(activeStep)}
+              endIcon={<ArrowForwardIcon />}
+            >
+              Next
+            </Button>
+          )}
+        </Box>
+
         <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
           {isEditMode ? 'Edit Product' : 'Add New Product'}
         </Typography>
@@ -512,7 +541,7 @@ export default function ProductEntryContent() {
         )}
 
         {/* Stepper */}
-        <Card sx={{ mb: 2 }}>
+        <Card sx={{ mb: 3 }}>
           <CardContent>
             <Stepper activeStep={activeStep}>
               {steps.map((label) => (
@@ -524,45 +553,8 @@ export default function ProductEntryContent() {
           </CardContent>
         </Card>
 
-        {/* Navigation Buttons - Moved to top */}
-        <Card sx={{ mb: 2 }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Button
-                disabled={activeStep === 0}
-                onClick={handleBack}
-                startIcon={<ArrowBackIcon />}
-              >
-                Back
-              </Button>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                {activeStep === steps.length - 1 ? (
-                  <Button
-                    variant="contained"
-                    onClick={handleSubmit}
-                    startIcon={<SaveIcon />}
-                  >
-                    {isEditMode ? 'Update Product' : 'Create Product'}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="contained"
-                    onClick={handleNext}
-                    disabled={!isStepValid(activeStep)}
-                    endIcon={<ArrowForwardIcon />}
-                  >
-                    Next
-                  </Button>
-                )}
-              </Box>
-            </Box>
-          </CardContent>
-        </Card>
-
-        {/* Step Content - Scrollable */}
-        <Box sx={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto', pr: 1 }}>
-          {getStepContent(activeStep)}
-        </Box>
+        {/* Step Content */}
+        {getStepContent(activeStep)}
 
         <Snackbar
           open={snackbar.open}
