@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Card,
@@ -63,6 +64,7 @@ interface Product {
 }
 
 export default function ProductManagementContent() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -315,8 +317,7 @@ export default function ProductManagementContent() {
                       <Tooltip title="Edit">
                         <IconButton
                           size="small"
-                          component="a"
-                          href={`/product-entry?id=${product.id}`}
+                          onClick={() => router.push(`/product-entry?id=${product.id}`)}
                           color="primary"
                         >
                           <EditIcon />
